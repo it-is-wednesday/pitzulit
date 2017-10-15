@@ -1,12 +1,6 @@
-import os, re, subprocess
-
-import sys
+import os, re, subprocess, sys
 
 NO_TIMESTAMPS_ERR = "Description doesn't contain song timestamps :("
-
-DOWNLOAD_PATH = "downloaded"
-DESCRIPTION_PATH = DOWNLOAD_PATH + ".description"
-ALBUM_PATH = DOWNLOAD_PATH + ".wav"
 
 
 def download_album(url):
