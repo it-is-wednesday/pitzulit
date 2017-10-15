@@ -1,7 +1,7 @@
 # Goferoo
 Extracts songs from an album hosted on YouTube (or any host supported by [youtube-dl](https://github.com/rg3/youtube-dl))
 based on song timestamps fetched from the video's description.  
-Depends on `ffmpeg` and `youtube-dl` 🔥
+`ffmpeg` and `youtube-dl` need to be in your PATH 🔥
 
 ## Usage
 ```
