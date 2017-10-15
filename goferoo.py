@@ -1,4 +1,4 @@
-import os, re, subprocess, sys
+import os, re, sys
 
 NO_TIMESTAMPS_ERR = "Description doesn't contain song timestamps :("
 
@@ -8,8 +8,8 @@ def download_album(url):
         description_path = download_path + ".description"
         album_path = download_path + ".wav"
 
-        subprocess.call(["youtube-dl", url, "-x", "--write-description",
-                         "-o", download_path + ".%(ext)s", "--audio-format", "wav"])
+        os.system("youtube-dl {url} -x --write-description -o '{download_path}.%(ext)s' --audio-format wav"
+                  .format(url=url, download_path=download_path))
 
         return album_path, description_path
 
@@ -71,3 +71,6 @@ video_description = open(description_path).read()
 timestamps = re.findall(r'\d\d:\d\d', video_description)
 
 chop(timestamps, album_path)
+
+os.remove(album_path)
+os.remove(description_path)
