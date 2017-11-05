@@ -1,9 +1,12 @@
-import os, re, sys
+import os
+import re
+import sys
+from typing import List
 
 NO_TIMESTAMPS_ERR = "Description doesn't contain song timestamps :("
 
 
-def download_album(url):
+def download_album(url: str) -> (str, str):
         download_path = "downloaded"
         description_path = download_path + ".description"
         album_path = download_path + ".wav"
@@ -14,15 +17,15 @@ def download_album(url):
         return album_path, description_path
 
 
-def extract_song(file, song_beginning, song_end, number):
+def extract_song(file_path: str, song_beginning: str, song_end: str, number: int):
         os.system("ffmpeg -y -ss {beginning} -t {end} -i \"{input_file}\" {output_file}"
                   .format(beginning=song_beginning,
                           end=int(minutes_to_seconds(song_end)) - int(minutes_to_seconds(song_beginning)),
-                          input_file=file,
+                          input_file=file_path,
                           output_file=str(number) + ".ogg"))
 
 
-def minutes_to_seconds(time):
+def minutes_to_seconds(time: str) -> int:
         ptime = time if type(time) is str else str(time)
         if ':' in ptime:
                 s = ptime.split(':')
@@ -32,7 +35,7 @@ def minutes_to_seconds(time):
         return ptime
 
 
-def album_length(file_path):
+def album_length(file_path: str) -> int:
         os.system("ffprobe -i {file_path} -show_entries format=duration -v quiet -of csv='p=0' > length"
                   .format(file_path=file_path))
         result = open("length").read()
@@ -41,7 +44,7 @@ def album_length(file_path):
         return int(float(result))
 
 
-def chop(timestamps, file_path):
+def chop(timestamps: List[str], file_path: str):
         def e(start, end, number):
                 extract_song(file_path, start, end, number)
 
