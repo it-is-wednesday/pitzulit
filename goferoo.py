@@ -8,7 +8,7 @@ NO_TIMESTAMPS_ERR = "Description doesn't contain song timestamps :("
 FilePath = str
 
 
-def download_album(url: str) -> (FilePath, FilePath):
+def download_album_and_description(url: str) -> (FilePath, FilePath):
         """
         :param url: url of a full album video on youtube
         :return: a tuple containing:
@@ -52,7 +52,7 @@ def album_length(file_path: FilePath) -> int:
         return int(float(result))
 
 
-def extract_track(file_path: str, song_beginning: str, song_end: str, number: int) -> FilePath:
+def extract_track(file_path: FilePath, song_beginning: str, song_end: str, number: int) -> FilePath:
         """
         :param file_path: path denoting a full album's audio file
         :param song_beginning: beginning of a song we'd like to extract (either in minutes or seconds)
@@ -68,7 +68,7 @@ def extract_track(file_path: str, song_beginning: str, song_end: str, number: in
         return str(number) + ".ogg"
 
 
-def chop(timestamps: List[str], file_path: str) -> List[FilePath]:
+def chop(timestamps: List[str], file_path: FilePath) -> List[FilePath]:
         """
         :param timestamps: a list of timestamps for each track in the album, for example: ["0:00", "4:30", "8:12"]
         :param file_path: path denoting an audio file containing the album's audio
@@ -98,16 +98,17 @@ def chop(timestamps: List[str], file_path: str) -> List[FilePath]:
 
 
 if __name__ == '__main__':
-        args = sys.argv
-        video_url = args[1]
-
-        album_path, description_path = download_album(video_url)
-
+        video_url = sys.argv[1]
+        album_path, description_path = download_album_and_description(video_url)
         video_description = open(description_path).read()
-        # find timestamps in the description
-        timestamps = re.findall(r'\d\d:\d\d', video_description)
 
-        print(chop(timestamps, album_path))
+        print(
+                chop(
+                        # find timestamps in the description
+                        timestamps=re.findall(r'\d\d:\d\d', video_description),
+                        file_path=album_path
+                )
+        )
 
         os.remove(album_path)
         os.remove(description_path)
