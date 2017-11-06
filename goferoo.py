@@ -1,5 +1,6 @@
 import os
 import re
+import subprocess
 import sys
 from typing import List
 
@@ -8,22 +9,23 @@ NO_TIMESTAMPS_ERR = "Description doesn't contain song timestamps :("
 FilePath = str
 
 
-def download_album_and_description(url: str) -> (FilePath, FilePath):
+def download_audio(url: str) -> (FilePath, FilePath):
         """
-        :param url: url of a full album video on youtube
-        :return: a tuple containing:
-                        1. path denoting a text file containing the video's description
-                        2. path denoting a WAV file containing the whole video's audio
+        :param url: url of a full album video on youtube/any youtube-dl supported service
+        :return: path denoting a WAV file containing the whole video's audio
         """
-        download_path = "downloaded"
+        downloaded_album_path = "goferoo_downloaded_audio.wav"
 
-        description_file = download_path + ".description"
-        album_file = download_path + ".wav"
+        args = ["youtube-dl", url, "-o", downloaded_album_path, "-x", "--audio-format", "wav"]
+        subprocess.call(args)
 
-        os.system("youtube-dl '{url}' -x --write-description -o '{download_path}.%(ext)s' --audio-format wav"
-                  .format(url=url, download_path=download_path))
+        return downloaded_album_path
 
-        return album_file, description_file
+
+def get_video_description(url: str) -> str:
+        p = subprocess.Popen(["youtube-dl", url, "--skip-download", "--get-description"], stdout=subprocess.PIPE)
+        output, err = p.communicate()
+        return output.decode()
 
 
 def minutes_to_seconds(time) -> int:
@@ -45,26 +47,34 @@ def album_length(file_path: FilePath) -> int:
         :param file_path: path denoting a full album's audio file
         :return: the album's length in seconds
         """
-        os.system("ffprobe -i {file_path} -show_entries format=duration -v quiet -of csv='p=0' > length"
-                  .format(file_path=file_path))
-        result = open("length").read()
-        os.remove("length")
+        # This hack is used because subprocess.Popen can't capture avprobe's output normally for some reason
+        length_out_file = "goferoo_audio_length_output"
+        os.system("avprobe -i {input} -show_entries format=duration -v quiet -of csv='p=0' > {output}".format(
+                input=file_path,
+                output=length_out_file
+        ))
+
+        args = ["avprobe", ""]
+        result = open(length_out_file).read()
+        os.remove(length_out_file)
         return int(float(result))
 
 
-def extract_track(file_path: FilePath, song_beginning: str, song_end: str, number: int) -> FilePath:
+def extract_track(file_path: FilePath, track_beginning: str, track_end: str, number: int) -> FilePath:
         """
         :param file_path: path denoting a full album's audio file
-        :param song_beginning: beginning of a song we'd like to extract (either in minutes or seconds)
-        :param song_end: end of a song we'd like to extract (either in minutes or seconds)
+        :param track_beginning: beginning of a song we'd like to extract (either in minutes or seconds)
+        :param track_end: end of a song we'd like to extract (either in minutes or seconds)
         :param number: track number
         :return: path denoting an audio file containing the extracted track
         """
-        os.system("avconv -i '{input_file}' -ss {beginning} -t {end} '{output_file}' -y"
-                  .format(beginning=song_beginning,
-                          end=int(minutes_to_seconds(song_end)) - int(minutes_to_seconds(song_beginning)),
-                          input_file=file_path,
-                          output_file=str(number) + ".ogg"))
+
+        output_file = str(number) + ".ogg"
+        track_length = str(int(minutes_to_seconds(track_end)) - int(minutes_to_seconds(track_beginning)))
+
+        args = ["avconv", "-i", file_path, "-ss", track_beginning, "-t", track_length, output_file, "-y"]
+        subprocess.call(args)
+
         return str(number) + ".ogg"
 
 
@@ -99,8 +109,8 @@ def chop(timestamps: List[str], file_path: FilePath) -> List[FilePath]:
 
 if __name__ == '__main__':
         video_url = sys.argv[1]
-        album_path, description_path = download_album_and_description(video_url)
-        video_description = open(description_path).read()
+        album_path = download_audio(video_url)
+        video_description = get_video_description(video_url)
 
         print(
                 chop(
@@ -111,4 +121,3 @@ if __name__ == '__main__':
         )
 
         os.remove(album_path)
-        os.remove(description_path)
