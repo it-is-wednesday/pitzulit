@@ -7,8 +7,6 @@ based on song timestamps fetched from the video's description.
 ```
 python3 goferoo.py [-h] [-u URL] [-a audio file] [-t timestamps file]
 
-Extract tracks from a full album file
-
 optional arguments:
   -h, --help                       show this help message and exit
   -u URL, --URL URL                URL to fetch audio and timestamps from. Needs to be a
