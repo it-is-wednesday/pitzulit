@@ -11,9 +11,12 @@ Extract tracks from a full album file
 
 optional arguments:
   -h, --help                       show this help message and exit
-  -u URL, --URL URL                URL to fetch audio and timestamps from. Needs to be a service supported by youtube-dl.
-  -a FILE, --audio-file FILE       file containing audio. if used along with -u, will only fetch the description from the specified URL.
-  -t FILE, --timestamps-file FILE  file containing timestamps. if used along with -u, will only fetch the audio from the specified URL.
+  -u URL, --URL URL                URL to fetch audio and timestamps from. Needs to be a
+                                   service supported by youtube-dl.
+  -a FILE, --audio-file FILE       file containing audio. if used along with -u, will only
+                                   fetch the description from the specified URL.
+  -t FILE, --timestamps-file FILE  file containing timestamps. if used along with -u, will
+                                   only fetch the audio from the specified URL.
 ```
 For instance, `python3 goferoo.py https://www.youtube.com/watch?v=BVO_R8uvMhE` will download the album and write [1-8].ogg into
 the current working directory.

@@ -112,7 +112,7 @@ if __name__ == '__main__':
                                          formatter_class=lambda prog: argparse.HelpFormatter(
                                                  prog,
                                                  max_help_position=9999,
-                                                 width=200
+                                                 width=90
                                          ))
 
         parser.add_argument("-u", "--URL",
