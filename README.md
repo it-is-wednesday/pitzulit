@@ -5,7 +5,7 @@ based on song timestamps fetched from the video's description.
 
 ## Usage
 ```
-python3.5 goferoo.py [-h] [-u URL] [-a audio file] [-t timestamps file]
+python3 goferoo.py [-h] [-u URL] [-a audio file] [-t timestamps file]
 
 Extract tracks from a full album file
 
@@ -18,5 +18,5 @@ optional arguments:
   -t FILE, --timestamps-file FILE  file containing timestamps. if used along with -u, will
                                    only fetch the audio from the specified URL.
 ```
-For instance, `python3 goferoo.py https://www.youtube.com/watch?v=BVO_R8uvMhE` will download the album and write [1-8].ogg into
+For instance, `python3 -u goferoo.py https://www.youtube.com/watch?v=BVO_R8uvMhE` will download the album and write [1-8].ogg into
 the current working directory.
