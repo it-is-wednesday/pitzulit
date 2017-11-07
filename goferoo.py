@@ -131,7 +131,6 @@ if __name__ == '__main__':
                                   if used along with -u, will only fetch the audio from the specified URL.")
 
         args = vars(parser.parse_args())
-        print(args)
 
         if args["url"] is not None:
                 album_path = args["audio_file"] if args["audio_file"] is not None else download_audio(url=args["url"])
