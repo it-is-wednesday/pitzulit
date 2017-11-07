@@ -92,19 +92,17 @@ def chop(timestamps: List[str], file_path: FilePath) -> List[FilePath]:
         ts = timestamps
         songs_num = len(ts) + 1
 
-        result = []
         if songs_num == 0:
                 print(NO_TIMESTAMPS_ERR)
+                sys.exit(1)
         elif songs_num == 1:
-                result.append(e(0, ts[0], 1))
-                result.append(e(ts[0], album_length(file_path), 2))
+                return [e(0, ts[0], 1), e(ts[0], album_length(file_path), 2)]
         else:
                 for i in range(1, songs_num):
                         if i == songs_num - 1:
-                                result.append(e(ts[-1], album_length(file_path), songs_num - 1))
+                                yield e(ts[-1], album_length(file_path), songs_num - 1)
                         else:
-                                result.append(e(ts[i - 1], ts[i], i))
-        return result
+                                yield e(ts[i - 1], ts[i], i)
 
 
 if __name__ == '__main__':
@@ -131,28 +129,31 @@ if __name__ == '__main__':
                                   if used along with -u, will only fetch the audio from the specified URL.")
 
         args = vars(parser.parse_args())
+        url = args["url"]
+        audio_file = args["audio_file"]
+        timestamps_file = args["timestamps_file"]
 
-        if args["url"] is not None:
-                album_path = args["audio_file"] if args["audio_file"] is not None else download_audio(url=args["url"])
-                timestamps = args["timestamps_file"] if args["timestamps_file"] is not None else get_video_description(url=args["url"])
+        if url is not None:
+                album_path = audio_file if audio_file is not None else download_audio(url=url)
+                timestamps = timestamps_file if args["timestamps_file"] is not None else get_video_description(url=url)
         else:
-                if args["audio_file"] is None or args["timestamps_file"] is None:
+                if audio_file is None or timestamps_file is None:
                         print("No audio/timestamps provided.")
                         sys.exit(2)
 
-                timestamps = args["timestamps_file"]
-                album_path = args["audio_file"]
+                timestamps = timestamps_file
+                album_path = audio_file
                 try:
-                        timestamps_file = open(args["timestamps_file"])
+                        timestamps_file = open(timestamps_file)
                         timestamps = timestamps_file.read()
                 except FileNotFoundError:
                         print("Timestamps file doesn't exist!")
                         sys.exit(2)
 
-        chop(
+        list(chop(
                 # find timestamps in the description
                 timestamps=re.findall(r'\d\d:\d\d', timestamps),
                 file_path=album_path
-        )
+        ))
 
         os.remove(album_path)
