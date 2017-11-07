@@ -115,7 +115,7 @@ if __name__ == '__main__':
                                                  width=90
                                          ))
 
-        parser.add_argument("-u", "--URL",
+        parser.add_argument("-u", "--url",
                             metavar="URL",
                             help="URL to fetch audio and timestamps from. \
                                   Needs to be a service supported by youtube-dl.")
@@ -131,19 +131,20 @@ if __name__ == '__main__':
                                   if used along with -u, will only fetch the audio from the specified URL.")
 
         args = vars(parser.parse_args())
+        print(args)
 
-        if args['u'] is not None:
-                album_path = args['a'] if args['a'] is not None else download_audio(url=args['u'])
-                timestamps = args['t'] if args['t'] is not None else get_video_description(url=args['u'])
+        if args["url"] is not None:
+                album_path = args["audio_file"] if args["audio_file"] is not None else download_audio(url=args["url"])
+                timestamps = args["timestamps_file"] if args["timestamps_file"] is not None else get_video_description(url=args["url"])
         else:
-                if args['a'] is None or args['t'] is None:
+                if args["audio_file"] is None or args["timestamps_file"] is None:
                         print("No audio/timestamps provided.")
                         sys.exit(2)
 
-                timestamps = args['t']
-                album_path = args['a']
+                timestamps = args["timestamps_file"]
+                album_path = args["audio_file"]
                 try:
-                        timestamps_file = open(args['t'])
+                        timestamps_file = open(args["timestamps_file"])
                         timestamps = timestamps_file.read()
                 except FileNotFoundError:
                         print("Timestamps file doesn't exist!")

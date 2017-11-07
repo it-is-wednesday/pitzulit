@@ -11,7 +11,7 @@ Extract tracks from a full album file
 
 optional arguments:
   -h, --help                       show this help message and exit
-  -u URL, --URL URL                URL to fetch audio and timestamps from. Needs to be a
+  -u URL, --url URL                URL to fetch audio and timestamps from. Needs to be a
                                    service supported by youtube-dl.
   -a FILE, --audio-file FILE       file containing audio. if used along with -u, will only
                                    fetch the description from the specified URL.
