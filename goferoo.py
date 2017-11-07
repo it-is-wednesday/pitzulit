@@ -2,6 +2,7 @@ import os
 import re
 import subprocess
 import sys
+import argparse
 from typing import List
 
 NO_TIMESTAMPS_ERR = "Description doesn't contain song timestamps :("
@@ -54,7 +55,6 @@ def album_length(file_path: FilePath) -> int:
                 output=length_out_file
         ))
 
-        args = ["avprobe", ""]
         result = open(length_out_file).read()
         os.remove(length_out_file)
         return int(float(result))
@@ -108,16 +108,51 @@ def chop(timestamps: List[str], file_path: FilePath) -> List[FilePath]:
 
 
 if __name__ == '__main__':
-        video_url = sys.argv[1]
-        album_path = download_audio(video_url)
-        video_description = get_video_description(video_url)
+        parser = argparse.ArgumentParser(description="Extract tracks from a full album file",
+                                         formatter_class=lambda prog: argparse.HelpFormatter(
+                                                 prog,
+                                                 max_help_position=9999,
+                                                 width=200
+                                         ))
 
-        print(
-                chop(
-                        # find timestamps in the description
-                        timestamps=re.findall(r'\d\d:\d\d', video_description),
-                        file_path=album_path
-                )
+        parser.add_argument("-u", "--URL",
+                            metavar="URL",
+                            help="URL to fetch audio and timestamps from. \
+                                  Needs to be a service supported by youtube-dl.")
+
+        parser.add_argument("-a", "--audio-file",
+                            metavar="FILE",
+                            help="file containing audio. \
+                                  if used along with -u, will only fetch the description from the specified URL.")
+
+        parser.add_argument("-t", "--timestamps-file",
+                            metavar="FILE",
+                            help="file containing timestamps. \
+                                  if used along with -u, will only fetch the audio from the specified URL.")
+
+        args = vars(parser.parse_args())
+
+        if args['u'] is not None:
+                album_path = args['a'] if args['a'] is not None else download_audio(url=args['u'])
+                timestamps = args['t'] if args['t'] is not None else get_video_description(url=args['u'])
+        else:
+                if args['a'] is None or args['t'] is None:
+                        print("No audio/timestamps provided.")
+                        sys.exit(2)
+
+                timestamps = args['t']
+                album_path = args['a']
+                try:
+                        timestamps_file = open(args['t'])
+                        timestamps = timestamps_file.read()
+                except FileNotFoundError:
+                        print("Timestamps file doesn't exist!")
+                        sys.exit(2)
+
+        chop(
+                # find timestamps in the description
+                timestamps=re.findall(r'\d\d:\d\d', timestamps),
+                file_path=album_path
         )
 
         os.remove(album_path)
