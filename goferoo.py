@@ -29,17 +29,24 @@ def get_video_description(url: str) -> str:
         return output.decode()
 
 
-def minutes_to_seconds(time) -> int:
+def to_seconds(time) -> int:
         """
         :param time: seconds/minutes (can be either a string in MM:SS format or an integer)
         :return: if time was an integer it returns itself; otherwise it's converted to seconds
         """
         ptime = str(time)
-        if ':' in ptime:
+        colons = ptime.count(':')
+        if colons == 1:
                 s = ptime.split(':')
                 minutes = s[0]
                 seconds = s[1]
                 return int(minutes) * 60 + int(seconds)
+        elif colons == 2:
+                s = ptime.split(':')
+                hours = s[0]
+                minutes = s[1]
+                seconds = s[2]
+                return int(hours) * 3600 + int(minutes) * 60 + int(seconds)
         return int(ptime)
 
 
@@ -70,7 +77,7 @@ def extract_track(file_path: FilePath, track_beginning: str, track_end: str, num
         """
 
         output_file = str(number) + ".ogg"
-        track_length = str(int(minutes_to_seconds(track_end)) - int(minutes_to_seconds(track_beginning)))
+        track_length = str(int(to_seconds(track_end)) - int(to_seconds(track_beginning)))
 
         args = ["avconv", "-i", file_path, "-ss", track_beginning, "-t", track_length, output_file, "-y"]
         subprocess.call(args)
@@ -139,6 +146,7 @@ if __name__ == '__main__':
         else:
                 if audio_file is None or timestamps_file is None:
                         print("No audio/timestamps provided.")
+                        parser.print_help()
                         sys.exit(2)
 
                 timestamps = timestamps_file
@@ -152,7 +160,7 @@ if __name__ == '__main__':
 
         list(chop(
                 # find timestamps in the description
-                timestamps=re.findall(r'\d\d:\d\d', timestamps),
+                timestamps=re.findall(r'\d?\d?:?\d\d:\d\d', timestamps),
                 file_path=album_path
         ))
 
