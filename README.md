@@ -15,6 +15,8 @@ optional arguments:
                                    fetch the description from the specified URL.
   -t FILE, --timestamps-file FILE  file containing timestamps. if used along with -u, will
                                    only fetch the audio from the specified URL.
+  --libav                          use avconv and avprobe for audio manipulation (default
+                                   is ffmpeg and ffprobe)
 ```
 For instance, `python3 -u goferoo.py https://www.youtube.com/watch?v=BVO_R8uvMhE` will download the album and write [1-8].ogg into
 the current working directory.
