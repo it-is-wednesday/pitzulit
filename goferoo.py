@@ -176,16 +176,13 @@ if __name__ == '__main__':
                                   if used along with -u, will only fetch the audio from the specified URL.")
         
         parser.add_argument("--libav",
-                            # const=ExtractionTool.AVCONV,
-                            # default=ExtractionTool.FFMPEG,
-                            # dest='accumulate',
                             action="store_true",
                             help="use avconv and avprobe for audio manipulation (default is ffmpeg and ffprobe)")
         
-        args = vars(parser.parse_args())
-        url = args["url"]
-        audio_file = args["audio_file"]
-        timestamps_file = args["timestamps_file"]
-        
-        use_avconv = parser.parse_args().libav
-        main(url, audio_file, timestamps_file, ExtractionTool.LIBAV if use_avconv else ExtractionTool.FFMPEG)
+        with vars(parser.parse_args()) as cmd_args, parser.parse_args().libav as use_avconv:
+                main(
+                        url=cmd_args["url"],
+                        audio_file=cmd_args["audio_file"],
+                        timestamps_file=cmd_args["timestamps_file"],
+                        et=ExtractionTool.LIBAV if use_avconv else ExtractionTool.FFMPEG
+                )
