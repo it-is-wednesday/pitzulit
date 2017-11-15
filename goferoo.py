@@ -89,7 +89,7 @@ def extract_track(file_path: FilePath, track_beginning: str, track_end: str, num
         output_file = str(number) + ".ogg"
         track_length = str(int(to_seconds(track_end)) - int(to_seconds(track_beginning)))
         
-        args = [et.value, "-i", file_path, "-ss", track_beginning, "-t", track_length, output_file, "-y"]
+        args = [et.value, "-i", file_path, "-ss", str(track_beginning), "-t", track_length, output_file, "-y"]
         subprocess.call(args)
         
         return str(number) + ".ogg"
@@ -108,20 +108,21 @@ def chop(timestamps: List[str], file_path: FilePath, et: ExtractionTool) -> List
                 return extract_track(file_path, start, end, number, et)
         
         ts = timestamps
+        if len(ts) == 0:
+                print(NO_TIMESTAMPS_ERR)
+                sys.exit(1)
+        
         songs_num = len(ts) + 1
         length = album_length(file_path, et)
         
-        if songs_num == 0:
-                print(NO_TIMESTAMPS_ERR)
-                sys.exit(1)
-        elif songs_num == 1:
+        if songs_num == 2:
                 return [e(0, ts[0], 1), e(ts[0], length, 2)]
         else:
                 for i in range(1, songs_num):
                         if i == songs_num - 1:
-                                yield e(ts[-1], length, songs_num - 1)
+                                yield e(start=ts[-1], end=length, number=songs_num - 1)
                         else:
-                                yield e(ts[i - 1], ts[i], i)
+                                yield e(start=ts[i - 1], end=ts[i], number=i)
 
 
 def main(url: str, audio_file: FilePath, timestamps_file: FilePath, et: ExtractionTool):
