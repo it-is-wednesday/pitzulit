@@ -1,7 +1,7 @@
 from distutils.core import setup
 
 setup(
-        name="goferoo",
+        name="balbuly",
         version="0.1",
         packages=[""],
         url="https://github.com/tag-them/Goferoo",

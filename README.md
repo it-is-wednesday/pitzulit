@@ -1,4 +1,4 @@
-# Goferoo
+# Balbuly
 Extracts songs from an album hosted on YouTube (or any host supported by [youtube-dl](https://github.com/rg3/youtube-dl))
 based on song timestamps fetched from the video's description.  
 `avconv`, `avprobe` and `youtube-dl` need to be available in your PATH 🔥
