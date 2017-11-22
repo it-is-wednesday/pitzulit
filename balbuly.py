@@ -21,7 +21,7 @@ def download_audio(url: str) -> (FilePath, FilePath):
         :param url: url of a full album video on youtube/any youtube-dl supported service
         :return: path denoting a WAV file containing the whole video's audio
         """
-        downloaded_album_path = "goferoo_downloaded_audio.wav"
+        downloaded_album_path = "balbuly_downloaded_audio.wav"
         
         args = ["youtube-dl", url, "-o", downloaded_album_path, "-x", "--audio-format", "wav"]
         subprocess.call(args)
@@ -63,7 +63,7 @@ def album_length(file_path: FilePath, et: ExtractionTool) -> int:
         :return: the album's length in seconds
         """
         # This hack is used because subprocess.Popen can't capture ffmpeg's output normally for some reason
-        length_out_file = "goferoo_audio_length_output"
+        length_out_file = "balbuly_audio_length_output"
         os.system("{et} -i {input} -show_entries format=duration -v quiet -of csv='p=0' > {output}".format(
                 et="ffprobe" if et == ExtractionTool.FFMPEG else "avprobe",
                 input=file_path,

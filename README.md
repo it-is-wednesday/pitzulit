@@ -5,7 +5,7 @@ based on song timestamps fetched from the video's description.
 
 ## Usage
 ```
-python3 goferoo.py [-h] [-u URL] [-a audio file] [-t timestamps file]
+python3 balbuly.py [-h] [-u URL] [-a audio file] [-t timestamps file]
 
 optional arguments:
   -h, --help                       show this help message and exit
@@ -18,5 +18,5 @@ optional arguments:
   --libav                          use avconv and avprobe for audio manipulation (default
                                    is ffmpeg and ffprobe)
 ```
-For instance, `python3 -u goferoo.py https://www.youtube.com/watch?v=BVO_R8uvMhE` will download the album and write [1-8].ogg into
+For instance, `python3 -u balbuly.py https://www.youtube.com/watch?v=BVO_R8uvMhE` will download the album and write [1-8].ogg into
 the current working directory.
