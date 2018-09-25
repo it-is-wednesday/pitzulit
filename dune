@@ -1,0 +1,7 @@
+(executable
+ (name main)
+ (libraries
+    containers
+    containers.unix
+    lwt.unix
+    re))
