@@ -33,20 +33,61 @@ let parse_desc desc =
     in
 
     let parse_line line =
-        { title = find_title line
-        ; timestamp = Option.get_exn (find_timestamp line)
-        }
+        match find_timestamp line with
+        | Some ts -> Some
+            { title = find_title line
+            ; timestamp = ts
+            }
+        | None -> None
     in
 
     desc
         |> String.lines
         |> List.map parse_line
+        |> List.keep_some
 
 
-let fetch_album_title url =
+let to_seconds time =
+    let open Option.Infix in
+    let hours, minutes, seconds =
+        match String.split_on_char ':' time with
+        | min::sec::[]     -> "0", min, sec
+        | hr::min::sec::[] -> hr, min, sec
+        | _                -> "", "", ""
+    in
+    Int.of_string hours   >>= fun hr ->
+    Int.of_string minutes >>= fun min ->
+    Int.of_string seconds >>= fun sec ->
+    Some (hr * 3600 + min * 60 + sec)
+
+
+let fetch_vid_title url =
     Printf.sprintf "youtube-dl -e %s" url
         |> Lwt_process.shell
         |> Lwt_process.pread
+
+
+let fetch_vid_desc url =
+    Printf.sprintf "youtube-dl %s --skip-download --get-description" url
+        |> Lwt_process.shell
+        |> Lwt_process.pread
+
+
+let slice_track album_path time_begin time_end num =
+    let open Option.Infix in
+    let output = Int.to_string num ^ ".ogg" in
+    let length = 
+        to_seconds time_end >>= fun e ->
+        to_seconds time_begin >>= fun b ->
+        Some (e - b) 
+    in
+
+    match length with
+    | None -> failwith "yeah there's an exception over here"
+    | Some length ->
+        Printf.sprintf "ffprobe -i %s -ss %s -t %s %s -y" album_path time_begin (Int.to_string length) output
+            |> Lwt_process.shell
+            |> Lwt_process.exec
 
         
 let download_album url output_file_name =
@@ -59,33 +100,31 @@ let () =
     let url = Sys.argv.(1) in
     let open Lwt.Infix in
 
+    (*
     let bruh () = 
-        Lwt.bind (Lwt_unix.sleep 2.) (fun () ->
+        Lwt_unix.sleep 2. >>= fun () ->
             parse_desc "1. 3:20 haha\n2. 4:20 yapppp...\n"
                 |> List.map (fun song ->
                         let min, sec = song.timestamp in
                         Printf.sprintf "Epic song: %s @ %d:%d" song.title min sec)
                 |> String.concat ", "
-                |> Lwt.return)
+                |> Lwt.return
     in
+    *)
 
     Lwt_main.run begin
-        let shit = bruh () in
-        let title = fetch_album_title url in
+        let desc = fetch_vid_desc url in
+        let title = fetch_vid_title url in
 
-        shit >>= Lwt_io.printl >>= fun () -> title >>= Lwt_io.print
+
+        title >>= fun title ->
+        desc  >>= fun desc ->
+        Lwt_io.printl ("Song title: " ^ title) >>= fun () ->
+        parse_desc desc
+            |> List.map (fun song ->
+                let min, sec = song.timestamp in
+                    Printf.sprintf "Epic song: %s @ %d:%d" song.title min sec)
+                |> String.concat ",\n"
+                |> Lwt_io.printl
     end
-        (*
-
-        Lwt.bind shit (fun sh ->
-            Lwt.bind (Lwt_io.printl sh) (fun () ->
-                Lwt.bind title (fun t ->
-                    Lwt_io.print t)))
-        title 
-            >>= Lwt_io.print
-            >>= fun () -> shit
-            >>= Lwt_io.print
-        download_album url "output" >>= fun _ -> print_endline title;
-         *)
-
 
