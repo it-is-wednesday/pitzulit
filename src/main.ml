@@ -128,7 +128,6 @@ let () =
         let url = Sys.argv.(1) in
         let album_info = download_video_and_info url "output" in
 
-
         album_info >>= fun album -> begin
             parse_desc album.description album.duration_seconds
                 |> Lwt_list.iter_p 
