@@ -7,10 +7,11 @@ type song_info =
     }
 
 
-type album_info =
+type video_info =
     { title : string
+    ; description : string
+    ; duration_seconds : string
     ; thumbnail_url : string
-    ; duration_seconds : int
     }
 
 
@@ -90,16 +91,24 @@ let slice_track album_path time_begin time_end num =
             |> Lwt_process.exec
 
         
-let download_album_and_fetch_info url output_file_name =
+let download_video_and_info url output_file_name =
     let open Lwt.Infix in
     let create_album_info json =
-        let field f = List.find (fun pair -> String.equal (fst pair) f) json |> snd in
-
+        let field f =
+            List.find (fun pair -> String.equal (fst pair) f) json 
+                |> snd
+                |> (function
+                    | `String str -> str
+                    | `Int n -> Int.to_string n
+                    | _ -> failwith ("Couldn't find a string/int field named " ^ f))
+        in
         { title = field "title"
+        ; description = field "description"
         ; thumbnail_url = field "thumbnail"
         ; duration_seconds = field "duration"
         }
     in
+
     Printf.sprintf "youtube-dl -x --audio-format=flac -o '%s.%%(ext)s' '%s' --print-json" output_file_name url
         |> Lwt_process.shell
         |> Lwt_process.pread 
@@ -112,10 +121,14 @@ let download_album_and_fetch_info url output_file_name =
 let () =
 
     Lwt_main.run begin
-        Lwt_io.printl "a"
+        let open Lwt.Infix in
+        let url = Sys.argv.(1) in
+        let album_info = download_video_and_info url "output" in
+
+        album_info >>= fun album_info ->
+            Lwt_io.printlf "title: %s, desc: %s, duration: %s"
+                album_info.title album_info.description album_info.duration_seconds
         (*
-    let open Lwt.Infix in
-    let url = Sys.argv.(1) in
         let desc = fetch_vid_desc url in
         let title = fetch_vid_title url in
 
