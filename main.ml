@@ -2,37 +2,45 @@ open Containers
 
 
 type song_info =
-    { title : string
-    ; timestamp : int * int (* hours, minutes and seconds *)
+    { song_title : string
+    ; time_seconds : int (* hours, minutes and seconds *)
+    ; length_seconds : int
     }
 
 
 type video_info =
-    { title : string
+    { video_title : string
     ; description : string
-    ; duration_seconds : string
+    ; duration_seconds : int
     ; thumbnail_url : string
     }
 
 
-let parse_desc desc =
+let parse_desc desc video_duration =
+    let open Option.Infix in
+
+    let parse_timestamp_string time =
+        let hours, minutes, seconds =
+            match String.split_on_char ':' time with
+            | min::sec::[]     -> "0", min, sec
+            | hr::min::sec::[] -> hr, min, sec
+            | _                -> "", "", ""
+        in
+        Int.of_string hours   >>= fun hr ->
+        Int.of_string minutes >>= fun min ->
+        Int.of_string seconds >>= fun sec ->
+        Some (hr * 3600 + min * 60 + sec)
+    in
+
     let timestamp_pattern = Re.Perl.compile_pat "(?:\\d+:)?\\d+:\\d+" in
     let list_item_mark_pattern = Re.Perl.compile_pat "\\d+\\." in
-    let other_noise_pattern = Re.Perl.compile_pat "-|–" in
-    let open Containers.Option.Infix in
-
-    let parse_timestamp timestamp_string =
-        let splits = String.split_on_char ':' timestamp_string in
-        Int.of_string (List.nth splits 0) >>= fun minutes ->
-        Int.of_string (List.nth splits 1) >>= fun seconds ->
-        Option.return (minutes, seconds)
-    in
+    let other_noise_pattern = Re.Perl.compile_pat "-|–|-" in
 
     let find_timestamp line =
         try
             Re.exec timestamp_pattern line
                 |> (fun groups -> Re.Group.get groups 0)
-                |> parse_timestamp
+                |> parse_timestamp_string
         with
             Not_found -> None
     in
@@ -45,50 +53,43 @@ let parse_desc desc =
             |> String.trim
     in
 
-    let parse_line line =
-        match find_timestamp line with
-        | Some ts -> Some
-            { title = find_title line
-            ; timestamp = ts
-            }
-        | None -> None
-    in
 
-    desc
+    let infos_without_length = desc
         |> String.lines
-        |> List.map parse_line
+        |> List.map begin fun line ->
+            match find_timestamp line with
+            | None -> None
+            | Some time_seconds -> Some (find_title line, time_seconds)
+        end
         |> List.keep_some
-
-
-let to_seconds time =
-    let open Option.Infix in
-    let hours, minutes, seconds =
-        match String.split_on_char ':' time with
-        | min::sec::[]     -> "0", min, sec
-        | hr::min::sec::[] -> hr, min, sec
-        | _                -> "", "", ""
-    in
-    Int.of_string hours   >>= fun hr ->
-    Int.of_string minutes >>= fun min ->
-    Int.of_string seconds >>= fun sec ->
-    Some (hr * 3600 + min * 60 + sec)
-
-
-let slice_track album_path time_begin time_end num =
-    let open Option.Infix in
-    let output = Int.to_string num ^ ".ogg" in
-    let length = 
-        to_seconds time_end >>= fun e ->
-        to_seconds time_begin >>= fun b ->
-        Some (e - b) 
     in
 
-    match length with
-    | None -> failwith "yeah there's an exception over here"
-    | Some length ->
-        Printf.sprintf "ffprobe -i %s -ss %s -t %s %s -y" album_path time_begin (Int.to_string length) output
-            |> Lwt_process.shell
-            |> Lwt_process.exec
+    List.mapi begin fun i (title, time) ->
+        let time_of_next_song =
+            let last_elem_index = List.length infos_without_length - 1 in
+            if Int.equal i last_elem_index
+                then video_duration
+                else snd (List.nth infos_without_length (i + 1))
+        in
+        { song_title = title
+        ; time_seconds = time
+        ; length_seconds = time_of_next_song - time
+        }
+    end infos_without_length
+
+
+let slice_track album_path time_begin duration title =
+    let open Lwt.Infix in
+    let output = title ^ ".flac" in
+
+    Printf.sprintf "ffmpeg -i %s -ss %s -t %s %s -y" 
+            album_path 
+            (Int.to_string time_begin)
+            (Int.to_string duration)
+            output
+        |> Lwt_process.shell
+        |> Lwt_process.exec
+        >>= fun _ -> Lwt.return_unit
 
         
 let download_video_and_info url output_file_name =
@@ -97,15 +98,18 @@ let download_video_and_info url output_file_name =
         let field f =
             List.find (fun pair -> String.equal (fst pair) f) json 
                 |> snd
-                |> (function
+                |> begin function
                     | `String str -> str
                     | `Int n -> Int.to_string n
-                    | _ -> failwith ("Couldn't find a string/int field named " ^ f))
+                    | _ -> failwith (Printf.sprintf "Couldn't find a string/int field named '%s'" f)
+                end
         in
-        { title = field "title"
+        { video_title = field "title"
         ; description = field "description"
         ; thumbnail_url = field "thumbnail"
-        ; duration_seconds = field "duration"
+        ; duration_seconds = field "duration" 
+                                |> Int.of_string 
+                                |> Option.get_exn
         }
     in
 
@@ -119,29 +123,19 @@ let download_video_and_info url output_file_name =
 
 
 let () =
-
     Lwt_main.run begin
         let open Lwt.Infix in
         let url = Sys.argv.(1) in
         let album_info = download_video_and_info url "output" in
 
-        album_info >>= fun album_info ->
-            Lwt_io.printlf "title: %s, desc: %s, duration: %s"
-                album_info.title album_info.description album_info.duration_seconds
-        (*
-        let desc = fetch_vid_desc url in
-        let title = fetch_vid_title url in
 
-
-        title >>= fun title ->
-        desc  >>= fun desc ->
-        Lwt_io.printl ("Song title: " ^ title) >>= fun () ->
-        parse_desc desc
-            |> List.map (fun song ->
-                let min, sec = song.timestamp in
-                    Printf.sprintf "Epic song: %s @ %d:%d" song.title min sec)
-                |> String.concat ",\n"
-                |> Lwt_io.printl
-                *)
+        album_info >>= fun album -> begin
+            parse_desc album.description album.duration_seconds
+                |> Lwt_list.iter_p 
+                    (fun track -> slice_track "output.flac"
+                                              track.time_seconds
+                                              track.length_seconds
+                                              track.song_title)
+        end
     end
 
