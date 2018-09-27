@@ -3,4 +3,5 @@
  (libraries
     containers
     lwt.unix
+    yojson
     re))
