@@ -3,7 +3,7 @@ open Containers
 
 type song_info =
     { song_title : string
-    ; time_seconds : int (* hours, minutes and seconds *)
+    ; time_seconds : int
     ; length_seconds : int
     }
 
@@ -78,11 +78,12 @@ let parse_desc desc video_duration =
     end infos_without_length
 
 
-let slice_track album_path time_begin duration title =
+let slice_track ~album_path ~time_begin ~duration ~title =
     let open Lwt.Infix in
     let output = title ^ ".flac" in
 
-    Printf.sprintf "ffmpeg -i %s -ss %s -t %s %s -y" 
+    Lwt_io.printlf "Extracting %s at %d..." title time_begin >>= fun () ->
+    Printf.sprintf "ffmpeg -i '%s' -ss '%s' -t '%s' '%s' -y -loglevel warning" 
             album_path 
             (Int.to_string time_begin)
             (Int.to_string duration)
@@ -113,6 +114,7 @@ let download_video_and_info url output_file_name =
         }
     in
 
+    Lwt_io.printlf "Downloading video at %s..." url >>= fun () ->
     Printf.sprintf "youtube-dl -x --audio-format=flac -o '%s.%%(ext)s' '%s' --print-json" output_file_name url
         |> Lwt_process.shell
         |> Lwt_process.pread 
@@ -128,13 +130,13 @@ let () =
         let url = Sys.argv.(1) in
         let album_info = download_video_and_info url "output" in
 
-        album_info >>= fun album -> begin
-            parse_desc album.description album.duration_seconds
-                |> Lwt_list.iter_p 
-                    (fun track -> slice_track "output.flac"
-                                              track.time_seconds
-                                              track.length_seconds
-                                              track.song_title)
-        end
+        album_info >>= fun album ->
+        parse_desc album.description album.duration_seconds
+            |> List.map 
+                (fun track -> slice_track ~album_path:"output.flac"
+                                          ~time_begin:track.time_seconds
+                                          ~duration:track.length_seconds
+                                          ~title:track.song_title)
+            |> Lwt.join
     end
 
