@@ -78,11 +78,10 @@ let parse_desc desc video_duration =
     end infos_without_length
 
 
-let slice_track ~album_path ~time_begin ~duration ~title =
+let slice_track ~album_path ~time_begin ~duration ~output_path =
     let open Lwt.Infix in
-    let output = title ^ ".flac" in
+    let output = output_path in
 
-    Lwt_io.printlf "Extracting %s at %d..." title time_begin >>= fun () ->
     Printf.sprintf "ffmpeg -i '%s' -ss '%s' -t '%s' '%s' -y -loglevel warning" 
             album_path 
             (Int.to_string time_begin)
@@ -130,13 +129,31 @@ let () =
         let url = Sys.argv.(1) in
         let album_info = download_video_and_info url "output" in
 
-        album_info >>= fun album ->
-        parse_desc album.description album.duration_seconds
-            |> List.map 
-                (fun track -> slice_track ~album_path:"output.flac"
-                                          ~time_begin:track.time_seconds
-                                          ~duration:track.length_seconds
-                                          ~title:track.song_title)
-            |> Lwt.join
+        let slice ~dir track =
+            Lwt_io.printlf "Extracting %s at %d..." 
+                track.song_title 
+                track.time_seconds >>= fun () ->
+            slice_track ~album_path:(dir ^ "/output.flac")
+                        ~time_begin:track.time_seconds
+                        ~duration:track.length_seconds
+                        ~output_path:(Printf.sprintf "%s/%s.flac" dir track.song_title)
+        in
+        
+        let parse_album album = 
+            let _ = Lwt_unix.mkdir album.video_title 0o740 in 
+            let _ = Lwt_unix.rename "output.flac" (Printf.sprintf "'%s/output.flac'" album.video_title) in
+            parse_desc album.description album.duration_seconds
+                |> List.map (slice ~dir:album.video_title)
+                |> Lwt.join
+        in
+
+        let rm_album_file () =
+            "rm output.flac"
+                |> Lwt_process.shell
+                |> Lwt_process.exec
+                |> fun _ -> Lwt.return_unit
+        in
+
+        album_info >>= parse_album >>= rm_album_file
     end
 
