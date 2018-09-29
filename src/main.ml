@@ -32,9 +32,9 @@ let parse_desc desc video_duration =
         Some (hr * 3600 + min * 60 + sec)
     in
 
-    let timestamp_pattern = Re.Perl.compile_pat "(?:\\d+:)?\\d+:\\d+" in
+    let timestamp_pattern      = Re.Perl.compile_pat "(?:\\d+:)?\\d+:\\d+" in
     let list_item_mark_pattern = Re.Perl.compile_pat "\\d+\\." in
-    let other_noise_pattern = Re.Perl.compile_pat "-|–|-" in
+    let other_noise_pattern    = Re.Perl.compile_pat "-|–|-|-" in
 
     let find_timestamp line =
         try
@@ -114,7 +114,7 @@ let download_video_and_info url output_file_name =
     in
 
     Lwt_io.printlf "Downloading video at %s..." url >>= fun () ->
-    Printf.sprintf "youtube-dl -x --audio-format=flac -o '%s.%%(ext)s' '%s' --print-json" output_file_name url
+    Printf.sprintf "youtube-dl -x --skip-download --audio-format=mp3 -o '%s.%%(ext)s' '%s' --print-json" output_file_name url
         |> Lwt_process.shell
         |> Lwt_process.pread 
         >>= fun json_raw -> 
@@ -133,27 +133,23 @@ let () =
             Lwt_io.printlf "Extracting %s at %d..." 
                 track.song_title 
                 track.time_seconds >>= fun () ->
-            slice_track ~album_path:(dir ^ "/output.flac")
+            slice_track ~album_path:(Printf.sprintf "%s/output.mp3" dir)
                         ~time_begin:track.time_seconds
                         ~duration:track.length_seconds
-                        ~output_path:(Printf.sprintf "%s/%s.flac" dir track.song_title)
+                        ~output_path:(Printf.sprintf "%s/%s.mp3" dir track.song_title)
         in
         
         let parse_album album = 
-            let _ = Lwt_unix.mkdir album.video_title 0o740 in 
-            let _ = Lwt_unix.rename "output.flac" (Printf.sprintf "'%s/output.flac'" album.video_title) in
+            let new_location = Printf.sprintf "%s/output.mp3" album.video_title in
+            Lwt_unix.mkdir album.video_title 0o740              >>= fun () ->
+            Lwt_unix.rename "output.mp3" new_location           >>= fun () ->
             parse_desc album.description album.duration_seconds
                 |> List.map (slice ~dir:album.video_title)
-                |> Lwt.join
+                |> Lwt.join                                     >>= fun () ->
+            Lwt_process.exec ("rm", [|"rm"; "output.mp3"|])     >>= fun _ ->
+            Lwt.return_unit
         in
 
-        let rm_album_file () =
-            "rm output.flac"
-                |> Lwt_process.shell
-                |> Lwt_process.exec
-                |> fun _ -> Lwt.return_unit
-        in
-
-        album_info >>= parse_album >>= rm_album_file
+        album_info >>= parse_album
     end
 
