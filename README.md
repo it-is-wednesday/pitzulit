@@ -1,7 +1,7 @@
 # Pitzulit
 Extract tracks from an album hosted on YouTube (or any host supported by [youtube-dl](https://github.com/rg3/youtube-dl))
 based on the timestamps in its description.
-Expects `ffmpeg` and `youtube-dl` to exist in your $PATH.
+Expects [`ffmpeg`](https://ffmpeg.org/), `id3v2`, `wget` and [`youtube-dl`](http://rg3.github.io/youtube-dl/) to exist in your $PATH.
 
 ## Building
 ```
