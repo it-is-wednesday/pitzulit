@@ -13,7 +13,7 @@ dune build src/main.exe
 ```
 _build/default/src/main.exe URL
 ```
-Provided the video this URL leads into is titled X, running this command will result in a new directory named X under the current working directory. Inside this directory, a couple of fresh tracks will be waiting for you, named according to the track titled found in the description.
+Running this command will create a new directory titled after the album's name that contains audio files, each file being a track from the album.
 
 ## Cool things to wish for
 - [ ] MP3 Tags
