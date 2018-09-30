@@ -16,7 +16,7 @@ type video_info =
     }
 
 
-let parse_desc desc video_duration =
+let parse_desc desc video_duration : song_info list =
     let open Option.Infix in
 
     let parse_timestamp_string time =
@@ -92,7 +92,7 @@ let slice_track ~album_path ~time_begin ~duration ~output_path =
         >>= fun _ -> Lwt.return_unit
 
         
-let download_video_and_info url output_file_name =
+let download_video_and_info url output_file_name : video_info Lwt.t =
     let open Lwt.Infix in
     let create_album_info json =
         let field f =
@@ -114,7 +114,7 @@ let download_video_and_info url output_file_name =
     in
 
     Lwt_io.printlf "Downloading video at %s..." url >>= fun () ->
-    Printf.sprintf "youtube-dl -x --skip-download --audio-format=mp3 -o '%s.%%(ext)s' '%s' --print-json" output_file_name url
+    Printf.sprintf "youtube-dl -x --audio-format=mp3 -o '%s.%%(ext)s' '%s' --print-json" output_file_name url
         |> Lwt_process.shell
         |> Lwt_process.pread 
         >>= fun json_raw -> 
@@ -138,15 +138,22 @@ let () =
                         ~duration:track.length_seconds
                         ~output_path:(Printf.sprintf "%s/%s.mp3" dir track.song_title)
         in
-        
+
+        let download_thumbnail url dir =
+            Lwt_io.printlf "Downloading thumbnail at %s..." url >>= fun () ->
+            Utils.lwt_shell "wget --quiet %s -O '%s/thumbnail.jpg'" dir url
+        in
+
         let parse_album album = 
-            let new_location = Printf.sprintf "%s/output.mp3" album.video_title in
-            Lwt_unix.mkdir album.video_title 0o740              >>= fun () ->
-            Lwt_unix.rename "output.mp3" new_location           >>= fun () ->
+            let output_dir = album.video_title in
+            let new_location = Printf.sprintf "%s/output.mp3" output_dir in
+            Lwt_unix.mkdir output_dir 0o740                    >>= fun () ->
+            Lwt_unix.rename "output.mp3" new_location          >>= fun () ->
             parse_desc album.description album.duration_seconds
-                |> List.map (slice ~dir:album.video_title)
-                |> Lwt.join                                     >>= fun () ->
-            Lwt_process.exec ("rm", [|"rm"; "output.mp3"|])     >>= fun _ ->
+                |> List.map (slice ~dir:output_dir)
+                |> List.cons (download_thumbnail album.thumbnail_url output_dir) 
+                |> Lwt.join                                    >>= fun () ->
+            Utils.lwt_shell "rm '%s/output.mp3'" output_dir    >>= fun _ ->
             Lwt.return_unit
         in
 
