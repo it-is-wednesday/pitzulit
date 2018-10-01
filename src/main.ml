@@ -1,7 +1,7 @@
 open Containers
 
 
-type song_info =
+type track_info =
     { song_title : string
     ; time_seconds : int
     ; length_seconds : int
@@ -16,7 +16,7 @@ type video_info =
     }
 
 
-let parse_desc desc video_duration : song_info list =
+let track_infos_from_desc desc video_duration : track_info list =
     let open Option.Infix in
 
     let parse_timestamp_string time =
@@ -78,8 +78,8 @@ let parse_desc desc video_duration : song_info list =
     end infos_without_length
 
 
-let slice_track_from_album ~album_path ~time_begin ~duration ~output_path ~song_title =
-    Utils.lwt_shell "ffmpeg -i '%s' -ss '%s' -t '%s' '%s' -y -loglevel warning" 
+let slice_track_from_album ~album_path ~time_begin ~duration ~output_path =
+    Utils.lwt_shell "ffmpeg -i %s -ss %s -t %s %s -y -loglevel warning 1> /dev/null" 
         album_path 
         (Int.to_string time_begin)
         (Int.to_string duration)
@@ -87,7 +87,7 @@ let slice_track_from_album ~album_path ~time_begin ~duration ~output_path ~song_
 
 
 let tag_track ~output_path ~song_title ~artist_name ~album_name ~track_num ~thumbnail_path =
-    Utils.lwt_shell "eyeD3 %s --title %s --artist %s --album %s --track %d --add-image %s:FRONT_COVER"
+    Utils.lwt_shell "eyeD3 %s --title %s --artist %s --album %s --track %d --add-image %s:FRONT_COVER 1> /dev/null"
         output_path song_title artist_name album_name track_num thumbnail_path
 
         
@@ -113,7 +113,7 @@ let download_video_and_info url output_file_name : video_info Lwt.t =
     in
 
     Lwt_io.printlf "Downloading video at %s..." url >>= fun () ->
-    Printf.sprintf "youtube-dl -x --audio-format=mp3 -o '%s' '%s' --print-json" output_file_name url
+    Printf.sprintf "youtube-dl -x --audio-format=mp3 -o %s %s --print-json" output_file_name url
         |> Lwt_process.shell
         |> Lwt_process.pread 
         >>= fun json_raw -> 
@@ -129,44 +129,57 @@ let album_artist_and_title video_title =
 
 let () =
     Lwt_main.run begin
-        let album_audio_path = "output.mp3" in
+        let album_audio_file_name = "output.mp3" in
         let open Lwt.Infix in
         let url = Sys.argv.(1) in
-        let album_info = download_video_and_info url album_audio_path in
-        let thumbnail_path = "thumbnail.jpg" in
-
-        let download_thumbnail url dir =
-            Lwt_io.printlf "Downloading thumbnail at %s..." url >>= fun () ->
-            Utils.lwt_shell "wget --quiet %s -O '%s/%s'" dir url thumbnail_path
-        in
+        let album_info = download_video_and_info url album_audio_file_name in
+        let thumbnail_file_name = "thumbnail.jpg" in
 
         let parse_album album = 
             let output_dir = album.video_title in
 
-            let new_location = Printf.sprintf "%s/%s" output_dir album_audio_path in
+            let album_audio_path =
+                Printf.sprintf "%s/%s" output_dir album_audio_file_name 
+            in
 
             let artist_name, album_name = album_artist_and_title album.video_title in
 
-            Lwt_unix.mkdir output_dir 0o740                           >>= fun () ->
-            Lwt_unix.rename album_audio_path new_location             >>= fun () ->
-            parse_desc album.description album.duration_seconds
-                |> List.mapi (fun i track -> slice_track_from_album
-                        ~album_path:album_audio_path
+            let slice track =
+                Lwt.finalize
+                    (fun () -> slice_track_from_album
+                        ~album_path:(Printf.sprintf "'%s'" album_audio_path)
                         ~time_begin:track.time_seconds
                         ~duration:track.length_seconds
-                        ~output_path:(Printf.sprintf "%s/%s.mp3" output_dir track.song_title)
-                        ~song_title:track.song_title
-                        >>= fun () -> tag_track
-                        ~output_path:(Printf.sprintf "%s/%s.mp3" output_dir track.song_title)
-                        ~song_title:track.song_title
-                        ~artist_name
-                        ~album_name
-                        ~track_num:(i + 1)
-                        ~thumbnail_path)
-                |> List.cons (download_thumbnail album.thumbnail_url output_dir) 
-                |> Lwt.join                                           >>= fun () ->
-            Utils.lwt_shell "rm '%s/%s'" output_dir album_audio_path  >>= fun _ ->
-            Lwt.return_unit
+                        ~output_path:(Printf.sprintf "'%s/%s.mp3'" output_dir track.song_title))
+                    (fun () ->
+                        Lwt_io.printlf "Extracted \"%s\"" track.song_title)
+            in
+
+            let tag track_num track =
+                tag_track
+                    ~output_path:(Printf.sprintf "'%s/%s.mp3'" output_dir track.song_title)
+                    ~song_title:(Printf.sprintf "'%s'" track.song_title)
+                    ~artist_name:(Printf.sprintf "'%s'" artist_name)
+                    ~album_name:(Printf.sprintf "'%s'" album_name)
+                    ~track_num:(track_num + 1)
+                    ~thumbnail_path:(Printf.sprintf "'%s/%s'" output_dir thumbnail_file_name)
+            in
+
+            let download_thumbnail =
+                let url = album.thumbnail_url in
+                Lwt_io.printlf "Downloading thumbnail at %s..." url >>= fun () ->
+                Utils.lwt_shell "wget '%s' -O '%s/%s' --quiet" url output_dir thumbnail_file_name
+            in
+
+            let tracks = track_infos_from_desc album.description album.duration_seconds in
+
+            Lwt_unix.mkdir output_dir 0o740                                          >>= fun () ->
+            Utils.lwt_shell "mv '%s' '%s'" album_audio_file_name album_audio_path    >>= fun () ->
+            Lwt_io.printl "Extracting tracks..."                                     >>= fun () ->
+            tracks |> List.map slice |> List.cons download_thumbnail |> Lwt.join     >>= fun () ->
+            Lwt_io.printl "Applying tags..."                                         >>= fun () ->
+            tracks |> List.mapi tag |> Lwt.join                                      >>= fun () ->
+            Utils.lwt_shell "rm '%s'" album_audio_path
         in
 
         album_info >>= parse_album
