@@ -19,5 +19,6 @@ Running this command will create a new directory titled after the album's name t
 - [X] MP3 Tags
 - [ ] Not depending on foreign executables
     - [ ] wget
+    - [ ] eyeD3
     - [ ] ffmpeg
     - [ ] youtube-dl
