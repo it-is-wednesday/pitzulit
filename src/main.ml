@@ -1,82 +1,6 @@
 open Containers
 
-
-type track_info =
-    { song_title : string
-    ; time_seconds : int
-    ; length_seconds : int
-    }
-
-
-type video_info =
-    { video_title : string
-    ; description : string
-    ; duration_seconds : int
-    ; thumbnail_url : string
-    }
-
-
-let track_infos_from_desc desc video_duration : track_info list =
-    let open Option.Infix in
-
-    let parse_timestamp_string time =
-        let hours, minutes, seconds =
-            match String.split_on_char ':' time with
-            | min::sec::[]     -> "0", min, sec
-            | hr::min::sec::[] -> hr, min, sec
-            | _                -> "", "", ""
-        in
-        Int.of_string hours   >>= fun hr ->
-        Int.of_string minutes >>= fun min ->
-        Int.of_string seconds >>= fun sec ->
-        Some (hr * 3600 + min * 60 + sec)
-    in
-
-    let timestamp_pattern      = Re.Perl.compile_pat "(?:\\d+:)?\\d+:\\d+" in
-    let list_item_mark_pattern = Re.Perl.compile_pat "\\d+\\." in
-    let other_noise_pattern    = Re.Perl.compile_pat "-|–|-|-" in
-
-    let find_timestamp line =
-        try
-            Re.exec timestamp_pattern line
-                |> (fun groups -> Re.Group.get groups 0)
-                |> parse_timestamp_string
-        with
-            Not_found -> None
-    in
-
-    let find_title line =
-        line
-            |> Re.replace_string ~all:false ~by:"" timestamp_pattern
-            |> Re.replace_string ~all:false ~by:"" list_item_mark_pattern
-            |> Re.replace_string ~all:false ~by:"" other_noise_pattern
-            |> String.trim
-    in
-
-
-    let infos_without_length = desc
-        |> String.lines
-        |> List.map begin fun line ->
-            match find_timestamp line with
-            | None -> None
-            | Some time_seconds -> Some (find_title line, time_seconds)
-        end
-        |> List.keep_some
-    in
-
-    List.mapi begin fun i (title, time) ->
-        let time_of_next_song =
-            let last_elem_index = List.length infos_without_length - 1 in
-            if Int.equal i last_elem_index
-                then video_duration
-                else snd (List.nth infos_without_length (i + 1))
-        in
-        { song_title = title
-        ; time_seconds = time
-        ; length_seconds = time_of_next_song - time
-        }
-    end infos_without_length
-
+open Pitzulit_types
 
 let slice_track_from_album ~album_path ~time_begin ~duration ~output_path =
     Utils.lwt_shell "ffmpeg -i %s -ss %s -t %s %s -y -loglevel warning 1> /dev/null" 
@@ -171,7 +95,7 @@ let () =
                 Utils.lwt_shell "wget '%s' -O '%s/%s' --quiet" url output_dir thumbnail_file_name
             in
 
-            let tracks = track_infos_from_desc album.description album.duration_seconds in
+            let tracks = Parse_desc.track_infos_from_desc album.description album.duration_seconds in
 
             Lwt_unix.mkdir output_dir 0o740                                          >>= fun () ->
             Utils.lwt_shell "mv '%s' '%s'" album_audio_file_name album_audio_path    >>= fun () ->
