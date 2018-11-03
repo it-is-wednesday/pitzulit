@@ -17,7 +17,8 @@ Running this command will create a new directory titled after the album's name t
 
 ## Cool things to wish for
 - [X] MP3 Tags
-- [ ] Not depending on foreign executables
+- [ ] Useful error messages
+- [ ] Not depending on foreign executables in PATH
     - [ ] wget
     - [ ] eyeD3
     - [ ] ffmpeg
