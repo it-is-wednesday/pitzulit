@@ -1,6 +1,5 @@
 open Containers
 open Option.Infix
-
 open Pitzulit_types
 
 let parse_timestamp_string time =
@@ -19,6 +18,7 @@ let parse_timestamp_string time =
 let timestamp_pattern      = Re.Perl.compile_pat "(?:\\d+:)?\\d+:\\d+"
 let list_item_mark_pattern = Re.Perl.compile_pat "\\d+\\."
 let other_noise_pattern    = Re.Perl.compile_pat "-|–|-|-"
+
 
 let extract_timestamp line =
   try

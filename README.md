@@ -21,7 +21,6 @@ Running this command will create a new directory titled after the album's name t
 - [ ] Tests
 - [ ] Useful error messages
 - [ ] Ensure essential binaries are available
-    - [ ] wget
-    - [ ] eyeD3
-    - [ ] ffmpeg
-    - [ ] youtube-dl
+- [ ] Provide an interface for searching and selecting videos
+	  instead of manually feeding their URL
+- [ ] Web interface?
