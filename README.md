@@ -17,10 +17,10 @@ Running this command will create a new directory titled after the album's name t
 
 ## Cool things to wish for
 - [X] MP3 Tags
-- [ ] Add a progress bar for video downloading
+- [ ] Progress bar
 - [ ] Tests
 - [ ] Useful error messages
-- [ ] Ensure essential binaries are available in PATH
+- [ ] Ensure essential binaries are available
     - [ ] wget
     - [ ] eyeD3
     - [ ] ffmpeg
