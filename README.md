@@ -21,6 +21,7 @@ Running this command will create a new directory titled after the album's name t
 - [ ] Tests
 - [ ] Useful error messages
 - [ ] Ensure essential binaries are available
-- [ ] Provide an interface for searching and selecting videos
+- [X] Provide an interface for searching and selecting videos
 	  instead of manually feeding their URL
+- [ ] Think of a sexier name
 - [ ] Web interface?

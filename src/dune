@@ -1,7 +1,11 @@
 (executable
  (name main)
+ (preprocess (pps lwt_ppx))
  (libraries
     containers
+    cohttp-lwt-unix
     lwt.unix
+    lwt_ppx
     yojson
+    lambdasoup
     re))
