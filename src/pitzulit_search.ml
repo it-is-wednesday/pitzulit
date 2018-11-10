@@ -23,7 +23,6 @@ let parse_video_item index item =
 
 let results_in_page page =
   let open Soup in
-  print_endline "results_in_page";
   parse page
   |> select_one ".item-section"
   |> Option.get_exn
@@ -58,7 +57,7 @@ let rec read_number () =
   | None -> read_number ()
   
 
-let interactive_search () =
+let interactive_search : string Lwt.t =
   let open Lwt_io in
   let%lwt ()       = print "Aight, let's search for an album! Please enter a query: " in
   let%lwt query    = read_line stdin in
