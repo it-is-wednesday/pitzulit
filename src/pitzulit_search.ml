@@ -58,7 +58,7 @@ let rec read_number () =
   | None -> read_number ()
   
 
-let interactive_search =
+let interactive_search () =
   let open Lwt_io in
   let%lwt ()       = print "Aight, let's search for an album! Please enter a query: " in
   let%lwt query    = read_line stdin in

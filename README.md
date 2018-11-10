@@ -5,7 +5,7 @@ Expects [`ffmpeg`](https://ffmpeg.org/), [`eyeD3`](https://eyed3.readthedocs.io/
 
 ## Building
 ```
-opam install containers lwt yojson re dune
+opam install containers lwt yojson re dune tls cohttp-lwt-unix
 dune build src/main.exe
 ```
 

@@ -37,7 +37,7 @@ let download_thumbnail url thumbnail_file_name out_dir =
   Utils.lwt_shell "wget '%s' -O '%s/%s' --quiet" url out_dir thumbnail_file_name
 
 
-let get_album url =
+let fetch_album url =
   let album_audio_file_name = "output.mp3" in
   let open Lwt.Infix in
   let album_info = download_video_and_info url album_audio_file_name in
