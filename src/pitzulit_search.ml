@@ -11,12 +11,29 @@ type video =
 let parse_video_item index item =
   let open Option.Infix in
   let open Soup in
+
+  let graceful_get_exn selector =
+    Option.get_lazy
+      (fun () ->
+        Utils.failwithf "Couldn't find any node of class %s!" selector)
+  in
+
   let yt_uix_tile_link = select_one ".yt-uix-tile-link" item in
-  { title =
-      Printf.sprintf "%s, length: %s"
-        (yt_uix_tile_link >>= leaf_text |> Option.get_exn) 
-        (select_one ".video-time" item >>= leaf_text |> Option.get_exn)
-  ; url = "https://www.youtube.com" ^ (yt_uix_tile_link >>= attribute "href" |> Option.get_exn)
+  let title = yt_uix_tile_link
+              >>= leaf_text
+              |> graceful_get_exn ".yt-uix-tile-link"
+  in
+  let length = select_one ".video-time" item
+               >>= leaf_text
+               |> graceful_get_exn ".video-time"
+  in
+  let relative_url = yt_uix_tile_link
+                     >>= attribute "href"
+                     |> graceful_get_exn ".yt-uix-tile-link"
+  in
+
+  { title = Printf.sprintf "%s, length: %s" title length
+  ; url = "https://www.youtube.com" ^ relative_url
   ; index = index + 1
   }
 
@@ -44,6 +61,7 @@ let search query =
   |> String.replace ~sub:" " ~by:"+"
   |> Printf.sprintf "https://www.youtube.com/results?search_query=%s"
   |> Uri.of_string
+  (* the following param filters out anything that isn't a video (playlists, livestreams, etc.) *)
   |> (fun uri -> Uri.add_query_param' uri ("sp", "EgIQAQ%253D%253D"))
   |> Client.get >>= fun (_, body) ->
   Cohttp_lwt.Body.to_string body
