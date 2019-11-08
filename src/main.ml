@@ -3,6 +3,8 @@ module P = Printf
 
 module Strings = struct
   let info_json_not_found = "Couldn't find any file that ends with .info.json. Does the file exist in this directory? Try running pitzulit again, without --no-download."
+
+  let bins_not_found = "Couldn't find in PATH one of these binaries: youtube-dl, eyeD3, ffmpeg"
 end
 
 let download url youtubedl_path =
@@ -39,6 +41,13 @@ let parse_tracks_from_desc (desc: string): Track.t list =
       Track.{title; time})
 
 let main url no_download youtubedl_path =
+  (* make sure the required executables are available via PATH *)
+  let required_bins = ["youtube-dl"; "eyeD3"; "ffmpeg"] in
+  if not (List.for_all Util.does_exec_exists required_bins) then begin
+    Util.eprint Strings.bins_not_found;
+    exit 1
+  end;
+
   if not no_download then download url youtubedl_path;
 
   (* youtube-dl, when provided with the --write-info-json flag, prints data

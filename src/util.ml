@@ -10,3 +10,6 @@ let find_file_fuzzy pattern =
 
 let eprint msg =
   IO.write_line stderr msg
+
+let does_exec_exists name =
+  Sys.command (Printf.sprintf "command -v %s 1> /dev/null" name) = 0
