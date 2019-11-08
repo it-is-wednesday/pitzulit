@@ -16,3 +16,16 @@ let to_string track =
     | End x -> x, -1
   in
   Printf.sprintf "%s (%d - %d)" track.title beg end_
+
+let extract album_file {title; time} =
+  let range = match time with
+    | Beginning end_ -> Printf.sprintf "-t %d" end_
+    | Middle (beg, end_) -> Printf.sprintf "-ss %d -to %d" beg end_
+    | End beg -> Printf.sprintf "-ss %d" beg
+  in
+  Sys.command
+    (Printf.sprintf
+       "ffmpeg -loglevel fatal -hide_banner -y %s -i '%s' '%s.mp3'"
+       range
+       (String.escaped album_file)
+       (String.escaped title))

@@ -7,8 +7,8 @@ module Strings = struct
   let bins_not_found = "Couldn't find in PATH one of these binaries: youtube-dl, eyeD3, ffmpeg"
 end
 
-let download url youtubedl_path =
-  let cmd = Printf.sprintf "%s %s -x --write-info-json" youtubedl_path url in
+let download url =
+  let cmd = Printf.sprintf "youtube-dl '%s' --extract-audio --audio-format=mp3 --output album.mp3 --write-info-json" url in
   match Sys.command cmd with
   | 0 -> ()
   | error_code -> Printf.eprintf "youtube-dl failed with error code %d\n" error_code; exit 1
@@ -40,7 +40,9 @@ let parse_tracks_from_desc (desc: string): Track.t list =
       in
       Track.{title; time})
 
-let main url no_download youtubedl_path =
+let main url no_download dir =
+  Sys.chdir dir;
+
   (* make sure the required executables are available via PATH *)
   let required_bins = ["youtube-dl"; "eyeD3"; "ffmpeg"] in
   if not (List.for_all Util.does_exec_exists required_bins) then begin
@@ -48,20 +50,13 @@ let main url no_download youtubedl_path =
     exit 1
   end;
 
-  if not no_download then download url youtubedl_path;
+  if not no_download then download url;
 
-  (* youtube-dl, when provided with the --write-info-json flag, prints data
-     about the video in JSON format. the data is saved as a file named
-     <videotitle>.info.json. since we don't know yet the video's title (because
-     we haven't opened the file!), we're looking for any file name that contains
-     ".info.json". *)
-  Util.find_file_fuzzy ".info.json"
-  |> Option.get_lazy (fun _ -> Util.eprint Strings.info_json_not_found; exit 1)
-  |> Yojson.Basic.from_file
+  Yojson.Basic.from_file "album.mp3.info.json"
   |> Yojson.Basic.Util.member "description"
   |> Yojson.Basic.to_string
   |> parse_tracks_from_desc
-  |> List.map Track.to_string
-  |> List.iter print_endline
+  |> List.iter (fun track ->
+      Track.extract "album.mp3" track |> ignore)
 
 let () = Cli.run main

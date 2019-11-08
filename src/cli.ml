@@ -8,13 +8,13 @@ let url =
   let doc = "URL of YouTube video (or any other host supported by youtube-dl)" in
   Arg.(required & pos 0 (some string) None & info [] ~doc)
 
-let youtubedl_path =
-  let doc = "Path of youtube-dl executable. Default is trying to get it from PATH" in
-  Arg.(value & opt string "youtube-dl" & info ["youtube-dl-path"] ~docv:"PATH" ~doc)
+let dir =
+  let doc = "Directory in which all the fun will happen" in
+  Arg.(value & opt string "." & info ["d"; "dir"] ~docv:"PATH" ~doc)
 
 let run main_func =
   let open Cmdliner in
   let doc = "sample text" in
   Term.(exit @@ eval
-          (Term.(const main_func $ url $ no_download $ youtubedl_path),
+          (Term.(const main_func $ url $ no_download $ dir),
            Term.info "pitzulit" ~version:"v0.1" ~doc))
