@@ -1,0 +1,14 @@
+opam-version: "2.0"
+name: "pitzulit"
+version: "0.1"
+synopsis: "Reclaim your music from filthy streaming services"
+description: """
+
+"""
+maintainer: "Maor Kadosh"
+license: "GPLv3"
+homepage: "https://git.avocadosh.xyz/a/pitzulit"
+bug-reports: "https://git.avocadosh.xyz/a/pitzulit/issues"
+dev-repo: "https://git.avocadosh.xyz/a/pitzulit"
+depends: ["ocaml" "cmdliner" "containers" "cohttp-lwt" "yojson" "re"]
+build: ["dune" "build" "-p" name "-j" jobs]

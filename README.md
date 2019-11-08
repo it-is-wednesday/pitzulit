@@ -5,15 +5,17 @@ Expects [`ffmpeg`](https://ffmpeg.org/), [`eyeD3`](https://eyed3.readthedocs.io/
 
 ## Building
 ```
-opam install containers lwt yojson re dune tls cohttp-lwt-unix
-dune build src/main.exe
+opam switch create pitzulit 4.08.1
+opam pin . --switch pitzulit
+make
 ```
+An executable named `pitzulit` will be created under the current directory
 
 ## Usage
 ```
-_build/default/src/main.exe URL
+./pitzulit URL
 ```
-Running this command will create a new directory titled after the album's name that contains audio files, each file being a track from the album.
+Running this command will create a new directory titled after the album's name. It will contains audio files, each file being a track from the album.
 
 ## Cool things to wish for
 - [X] MP3 Tags
@@ -22,6 +24,4 @@ Running this command will create a new directory titled after the album's name t
 - [ ] Useful error messages
 - [ ] Ensure essential binaries are available
 - [X] Provide an interface for searching and selecting videos
-	  instead of manually feeding their URL
-- [ ] Think of a sexier name
-- [ ] Web interface?
+      instead of manually feeding their URL
