@@ -89,3 +89,6 @@ _build.prev/
 node_modules/
 
 # End of https://www.gitignore.io/api/ocaml,emacs
+
+# binary produces by build
+pitzulit
