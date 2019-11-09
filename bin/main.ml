@@ -1,18 +1,22 @@
 open Containers
 
-module P = Printf
+let say ?(err=false) msg =
+  let open ANSITerminal in
+  let f = if err then printf else eprintf in
+  f [magenta; Bold] (msg ^^ "\n")
 
 module Strings = struct
-  let info_json_not_found = "Couldn't find any file that ends with .info.json. Does the file exist in this directory? Try running pitzulit again, without --no-download."
+  type fo = (unit, unit, string, string, string, unit) format6
+  let info_json_not_found : fo = "Couldn't find any file that ends with .info.json. Does the file exist in this directory? Try running pitzulit again, without --no-download."
 
-  let bins_not_found = "Couldn't find in PATH one of these binaries: youtube-dl, eyeD3, ffmpeg"
+  let bins_not_found : fo = "Couldn't find in PATH one of these binaries: youtube-dl, eyeD3, ffmpeg"
 end
 
 let download url =
   let cmd = Printf.sprintf "youtube-dl '%s' --extract-audio --audio-format=mp3 --output album.mp3 --write-info-json" url in
   match Sys.command cmd with
   | 0 -> ()
-  | error_code -> Printf.eprintf "youtube-dl failed with error code %d\n" error_code; exit 1
+  | error_code -> say ~err:true "youtube-dl failed with error code %d\n" error_code; exit 1
 
 
 let parse_info_json file_name =
@@ -31,33 +35,33 @@ let tag file (track: Pitzulit.Track.t) (album: Pitzulit.Album.t) =
 
 let main url dir no_download no_extract =
   if not (IO.File.exists dir) then begin
-    Printf.printf "Directory %s doesn't exist, creating it" dir;
+    say "Directory %s doesn't exist, creating it" dir;
     Unix.mkdir dir 0o777;
   end;
-  Printf.printf "Working in %s" (if String.equal dir "." then "current directory" else dir);
+  say "Working in %s" (if String.equal dir "." then "current directory" else dir);
   Sys.chdir dir;
 
-  print_endline "Looking for required binaries";
   (* make sure the required executables are available via PATH *)
+  say "Looking for required binaries";
   let required_bins = ["youtube-dl"; "eyeD3"; "ffmpeg"] in
   if not (List.for_all Util.does_exec_exists required_bins) then begin
-    Util.eprint Strings.bins_not_found;
+    say ~err:true Strings.bins_not_found;
     exit 1
   end;
 
   if no_download then
-    print_endline "Skipping video download"
+    say "Skipping video download"
   else
     download url;
 
-  print_endline "Parsing .info.json";
+  say "Parsing .info.json";
   let video_title, desc, cover_uri = parse_info_json "album.mp3.info.json" in
 
-  print_endline "Downloading cover art (video thumbnail)";
+  say "Downloading cover art (video thumbnail)";
   Util.wget cover_uri "cover.jpg" |> Lwt_main.run;
 
   let album_artist, album_title = Pitzulit.Desc.extract_title_data video_title in
-  (* Printf.printf "Album details found: \"%s\" by %s\n" album_title album_artist; *)
+  say "Album details found: \"%s\" by %s\n" album_title album_artist;
 
   let album = Pitzulit.Album.{
       title = album_title;

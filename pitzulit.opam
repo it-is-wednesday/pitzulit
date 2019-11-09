@@ -10,5 +10,5 @@ license: "GPLv3"
 homepage: "https://git.avocadosh.xyz/a/pitzulit"
 bug-reports: "https://git.avocadosh.xyz/a/pitzulit/issues"
 dev-repo: "git+https://git.avocadosh.xyz/a/pitzulit.git"
-depends: ["ocaml" "cmdliner" "containers" "cohttp-lwt-unix" "yojson" "re"]
+depends: ["ocaml" "cmdliner" "containers" "cohttp-lwt-unix" "yojson" "re" "ANSITerminal"]
 build: ["dune" "build" "-p" name "-j" jobs]
