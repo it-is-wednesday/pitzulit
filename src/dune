@@ -3,6 +3,6 @@
  (libraries
     cmdliner
     containers
-    cohttp-lwt
+    cohttp-lwt-unix
     yojson
     re))

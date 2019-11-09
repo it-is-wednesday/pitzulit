@@ -1,9 +1,13 @@
 open Containers
 open Option.Infix
 
-let timestamp_pattern      = Re.Perl.compile_pat "(?:\\d+:)?\\d+:\\d+"
-let list_item_mark_pattern = Re.Perl.compile_pat "\\d+\\."
-let other_noise_pattern    = Re.Perl.compile_pat "-|–|-|-"
+(* track patterns *)
+let timestamp_pat        = Re.Perl.compile_pat "(?:\\d+:)?\\d+:\\d+"
+let list_item_mark_pat   = Re.Perl.compile_pat "\\d+\\."
+let other_noise_pat      = Re.Perl.compile_pat "-|–|-|-"
+
+(* video title patterns *)
+let album_title_noise_pat = Re.Perl.compile_pat "(\\[|\\()full album(\\]|\\))" ~opts:[`Caseless]
 
 type stamp_line = {
   title: string;
@@ -28,7 +32,7 @@ let parse_line (raw_line: string) : stamp_line option =
 
   let extract_timestamp line : int option =
     try
-      Re.exec timestamp_pattern line
+      Re.exec timestamp_pat line
       |> (fun groups -> Re.Group.get groups 0)
       |> parse_timestamp_string
     with
@@ -37,9 +41,9 @@ let parse_line (raw_line: string) : stamp_line option =
 
   let extract_title line =
     line
-    |> Re.replace_string ~all:false ~by:"" timestamp_pattern
-    |> Re.replace_string ~all:false ~by:"" list_item_mark_pattern
-    |> Re.replace_string ~all:false ~by:"" other_noise_pattern
+    |> Re.replace_string ~all:false ~by:"" timestamp_pat
+    |> Re.replace_string ~all:false ~by:"" list_item_mark_pat
+    |> Re.replace_string ~all:false ~by:"" other_noise_pat
     |> String.trim
   in
 
@@ -55,28 +59,33 @@ let parse_tracks_from_desc (desc: string): Track.t list =
      timestamp. for example:
      2:30 bruh song
      3:22 second bruh song *)
-  let stamp_lines = List.filter_map parse_line (String.split ~by:"\\n" desc) in
+  let stamp_lines = List.filter_map parse_line (String.split ~by:"\n" desc) in
 
   (* figure out track's actual time ranges out of the timestamps. we
      take into account the surrounding lines to calculate it. for example,
      given the previous example, we can understand that "bruh song" starts at
      2:30 and ends at 3:22, because the timestamp in the following line is 3:22. *)
   let num_of_lines = List.length stamp_lines in
-  stamp_lines |> List.mapi (fun line_num {title; timestamp_sec} ->
-      let time = match line_num with
+  stamp_lines |> List.mapi (fun track_num {title; timestamp_sec} ->
+      let time = match track_num with
         (* last track *)
-        | x when x = (num_of_lines - 1) -> Track.End timestamp_sec
+        | x when x = (num_of_lines - 1) -> Track.Time.End timestamp_sec
         (* either the first track or a track in the middle *)
         | _ ->
           (* timestamp at next line *)
-          let next_stamp = (List.get_at_idx_exn (line_num + 1) stamp_lines).timestamp_sec in
-          match line_num with
-          | 0 -> Track.Beginning next_stamp
-          | _ -> Track.Middle (timestamp_sec, next_stamp)
+          let next_stamp = (List.get_at_idx_exn (track_num + 1) stamp_lines).timestamp_sec in
+          match track_num with
+          | 0 -> Track.Time.Beginning next_stamp
+          | _ -> Track.Time.Middle (timestamp_sec, next_stamp)
       in
-      Track.{title; time})
+      Track.{title; time; track_num})
 
 
 let extract_title_data video_title =
   let s = String.split_on_char '-' video_title in
-  List.nth s 0, List.nth s 1
+  List.nth s 0
+  |> Re.replace_string album_title_noise_pat ~by:""
+  |> String.trim,
+  List.nth s 1
+  |> Re.replace_string album_title_noise_pat ~by:""
+  |> String.trim

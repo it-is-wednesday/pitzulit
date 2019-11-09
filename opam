@@ -9,6 +9,6 @@ maintainer: "Maor Kadosh"
 license: "GPLv3"
 homepage: "https://git.avocadosh.xyz/a/pitzulit"
 bug-reports: "https://git.avocadosh.xyz/a/pitzulit/issues"
-dev-repo: "https://git.avocadosh.xyz/a/pitzulit"
-depends: ["ocaml" "cmdliner" "containers" "cohttp-lwt" "yojson" "re"]
+dev-repo: "git+https://git.avocadosh.xyz/a/pitzulit.git"
+depends: ["ocaml" "cmdliner" "containers" "cohttp-lwt-unix" "yojson" "re"]
 build: ["dune" "build" "-p" name "-j" jobs]
