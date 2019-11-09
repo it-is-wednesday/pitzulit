@@ -1,3 +1,3 @@
 build:
-	dune build src/main.exe
-	cp _build/default/src/main.exe ./pitzulit
+	dune build bin/main.exe
+	cp _build/default/bin/main.exe ./pitzulit

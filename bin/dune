@@ -1,0 +1,6 @@
+(executable
+ (public_name pitzulit)
+ (name main)
+ (libraries pitzulit containers cohttp-lwt-unix yojson re cmdliner)
+ (preprocess
+  (pps ppx_inline_test)))

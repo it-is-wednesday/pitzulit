@@ -1,4 +1,5 @@
 open Containers
+
 module P = Printf
 
 module Strings = struct
@@ -22,7 +23,7 @@ let parse_info_json file_name =
   Util.to_string (Util.member "thumbnail" json) |> Uri.of_string
 
 
-let tag file (track: Track.t) (album: Album.t) =
+let tag file (track: Pitzulit.Track.t) (album: Pitzulit.Album.t) =
   Printf.sprintf "eyeD3 '%s' --title '%s' --artist '%s' --album '%s' --track %d --add-image %s:FRONT_COVER"
     file track.title album.artist album.title track.track_num album.cover_art
   |> Sys.command
@@ -55,20 +56,20 @@ let main url dir no_download no_extract =
   print_endline "Downloading cover art (video thumbnail)";
   Util.wget cover_uri "cover.jpg" |> Lwt_main.run;
 
-  let album_artist, album_title = Desc.extract_title_data video_title in
+  let album_artist, album_title = Pitzulit.Desc.extract_title_data video_title in
   (* Printf.printf "Album details found: \"%s\" by %s\n" album_title album_artist; *)
 
-  let album = Album.{
+  let album = Pitzulit.Album.{
       title = album_title;
       artist = album_artist;
       cover_art = IO.File.make "cover.jpg" } in
 
   desc
-  |> Desc.parse_tracks_from_desc
-  |> List.iter (fun (track : Track.t) ->
+  |> Pitzulit.Desc.parse_tracks_from_desc
+  |> List.iter (fun (track : Pitzulit.Track.t) ->
       let track_file = track.title ^ ".mp3" in
       if not no_extract then
-        Track.extract "album.mp3" track;
+        Pitzulit.Track.extract "album.mp3" track;
       tag track_file track album |> ignore;
     )
 

@@ -1,8 +1,0 @@
-(executable
- (name main)
- (libraries
-    cmdliner
-    containers
-    cohttp-lwt-unix
-    yojson
-    re))
