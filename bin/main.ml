@@ -1,22 +1,31 @@
 open Containers
 
-let say ?(err=false) msg =
-  let open ANSITerminal in
-  let f = if err then printf else eprintf in
-  f [magenta; Bold] (msg ^^ "\n")
+let say, sayf = Util.say, Util.sayf
 
 module Strings = struct
-  type fo = (unit, unit, string, string, string, unit) format6
-  let info_json_not_found : fo = "Couldn't find any file that ends with .info.json. Does the file exist in this directory? Try running pitzulit again, without --no-download."
+  type ('a) f = ('a, unit, string) format
 
-  let bins_not_found : fo = "Couldn't find in PATH one of these binaries: youtube-dl, eyeD3, ffmpeg"
+  let info_json_not_found = {|Couldn't find any file that ends with
+.info.json. Does the file exist in this directory? Try running pitzulit
+again, without --no-download.|}
+
+  let bins_not_found = {|Couldn't find in PATH one of these binaries:
+youtube-dl, eyeD3, ffmpeg|}
+
+  let youtubedl_cmd : _ f = {|youtube-dl '%s' --extract-audio --audio-format=mp3
+--output album.mp3 --write-info-json|}
+
+  let eyed3_cmd : _ f = {|eyeD3 '%s' --title '%s' --artist '%s' --album '%s'
+--track %d --add-image %s:FRONT_COVER|}
 end
 
+
 let download url =
-  let cmd = Printf.sprintf "youtube-dl '%s' --extract-audio --audio-format=mp3 --output album.mp3 --write-info-json" url in
+  let cmd = Printf.sprintf Strings.youtubedl_cmd url in
   match Sys.command cmd with
   | 0 -> ()
-  | error_code -> say ~err:true "youtube-dl failed with error code %d\n" error_code; exit 1
+  | error_code ->
+    sayf ~err:true "youtube-dl failed with error code %d\n" error_code; exit 1
 
 
 let parse_info_json file_name =
@@ -28,17 +37,19 @@ let parse_info_json file_name =
 
 
 let tag file (track: Pitzulit.Track.t) (album: Pitzulit.Album.t) =
-  Printf.sprintf "eyeD3 '%s' --title '%s' --artist '%s' --album '%s' --track %d --add-image %s:FRONT_COVER"
+  Printf.sprintf Strings.eyed3_cmd
     file track.title album.artist album.title track.track_num album.cover_art
   |> Sys.command
 
 
 let main url dir no_download no_extract =
   if not (IO.File.exists dir) then begin
-    say "Directory %s doesn't exist, creating it" dir;
+    sayf "Directory %s doesn't exist, creating it" dir;
     Unix.mkdir dir 0o777;
   end;
-  say "Working in %s" (if String.equal dir "." then "current directory" else dir);
+
+  sayf "Working in %s"
+    (if String.equal dir "." then "current directory" else dir);
   Sys.chdir dir;
 
   (* make sure the required executables are available via PATH *)
@@ -60,8 +71,8 @@ let main url dir no_download no_extract =
   say "Downloading cover art (video thumbnail)";
   Util.wget cover_uri "cover.jpg" |> Lwt_main.run;
 
-  let album_artist, album_title = Pitzulit.Desc.extract_title_data video_title in
-  say "Album details found: \"%s\" by %s\n" album_title album_artist;
+  let album_artist, album_title = Pitzulit.Desc.parse_vid_title video_title in
+  sayf "Album details found: \"%s\" by %s\n" album_title album_artist;
 
   let album = Pitzulit.Album.{
       title = album_title;
@@ -74,7 +85,6 @@ let main url dir no_download no_extract =
       let track_file = track.title ^ ".mp3" in
       if not no_extract then
         Pitzulit.Track.extract "album.mp3" track;
-      tag track_file track album |> ignore;
-    )
+      tag track_file track album |> ignore;)
 
 let () = Cli.run main

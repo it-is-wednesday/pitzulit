@@ -3,7 +3,7 @@ open Containers
 module Time = struct
   type t =
     | Beginning of int (* track's end timestamp in seconds *)
-    | Middle of int * int (* track's beginning timestamp and end timestamp in seconds *)
+    | Middle of int * int (* beginning timestamp and end in seconds *)
     | End of int (* track's timestamp (from the beginning!) in seconds *)
 end
 

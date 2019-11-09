@@ -7,7 +7,8 @@ let list_item_mark_pat   = Re.Perl.compile_pat "\\d+\\."
 let other_noise_pat      = Re.Perl.compile_pat "-|–|-|-"
 
 (* video title patterns *)
-let album_title_noise_pat = Re.Perl.compile_pat "(\\[|\\()full album(\\]|\\))" ~opts:[`Caseless]
+let album_title_noise_pat = Re.Perl.compile_pat
+    "(\\[|\\()full album(\\]|\\))" ~opts:[`Caseless]
 
 type stamp_line = {
   title: string;
@@ -64,7 +65,8 @@ let parse_tracks_from_desc (desc: string): Track.t list =
   (* figure out track's actual time ranges out of the timestamps. we
      take into account the surrounding lines to calculate it. for example,
      given the previous example, we can understand that "bruh song" starts at
-     2:30 and ends at 3:22, because the timestamp in the following line is 3:22. *)
+     2:30 and ends at 3:22, because the timestamp in the following line is
+     3:22. *)
   let num_of_lines = List.length stamp_lines in
   stamp_lines |> List.mapi (fun track_num {title; timestamp_sec} ->
       let time = match track_num with
@@ -73,7 +75,8 @@ let parse_tracks_from_desc (desc: string): Track.t list =
         (* either the first track or a track in the middle *)
         | _ ->
           (* timestamp at next line *)
-          let next_stamp = (List.get_at_idx_exn (track_num + 1) stamp_lines).timestamp_sec in
+          let next_stamp =
+            (List.get_at_idx_exn (track_num + 1) stamp_lines).timestamp_sec in
           match track_num with
           | 0 -> Track.Time.Beginning next_stamp
           | _ -> Track.Time.Middle (timestamp_sec, next_stamp)
@@ -81,7 +84,7 @@ let parse_tracks_from_desc (desc: string): Track.t list =
       Track.{title; time; track_num})
 
 
-let extract_title_data video_title =
+let parse_vid_title video_title =
   let s = String.split_on_char '-' video_title in
   List.nth s 0
   |> Re.replace_string album_title_noise_pat ~by:""
