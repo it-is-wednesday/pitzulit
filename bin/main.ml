@@ -9,13 +9,13 @@ module Strings = struct
 .info.json. Does the file exist in this directory? Try running pitzulit
 again, without --no-download.|}
 
-  let bins_not_found = {|Couldn't find in PATH one of these binaries:
+  let bins_not_found = {|Couldn't find in PATH one of these binaries: \
 youtube-dl, eyeD3, ffmpeg|}
 
-  let youtubedl_cmd : _ f = {|youtube-dl '%s' --extract-audio --audio-format=mp3
+  let youtubedl_cmd : _ f = {|youtube-dl '%s' --extract-audio --audio-format=mp3 \
 --output album.mp3 --write-info-json|}
 
-  let eyed3_cmd : _ f = {|eyeD3 '%s' --title '%s' --artist '%s' --album '%s'
+  let eyed3_cmd : _ f = {|eyeD3 '%s' --title '%s' --artist '%s' --album '%s' \
 --track %d --add-image %s:FRONT_COVER|}
 end
 
