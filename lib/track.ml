@@ -14,17 +14,6 @@ type t = {
 }
 
 
-let to_string track =
-  let beg, end_ =
-    let open Time in
-    match track.time with
-    | Beginning x -> 0, x
-    | Middle (x, y) -> x, y
-    | End x -> x, -1
-  in
-  Printf.sprintf "%d. %s (%d - %d)" track.track_num track.title beg end_
-
-
 let extract album_file {title; time; _} =
   let range =
     let open Time in

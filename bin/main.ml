@@ -28,8 +28,8 @@ let download url =
     sayf ~err:true "youtube-dl failed with error code %d\n" error_code; exit 1
 
 
+(** returns: album title, album artist, video description, thumbnail URL *)
 let parse_info_json file_name =
-  (** returns: album title, album artist, video description, thumbnail URL *)
   let open Yojson.Basic in
   let json = from_file file_name in
   let noise =
