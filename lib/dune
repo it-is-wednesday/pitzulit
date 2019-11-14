@@ -1,3 +1,3 @@
 (library
  (name pitzulit)
- (libraries containers cohttp-lwt-unix yojson re cmdliner ANSITerminal))
+ (libraries containers cohttp-lwt-unix re))
