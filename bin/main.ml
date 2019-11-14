@@ -29,9 +29,21 @@ let download url =
 
 
 let parse_info_json file_name =
+  (** returns: album title, album artist, video description, thumbnail URL *)
   let open Yojson.Basic in
   let json = from_file file_name in
-  Util.to_string (Util.member "title" json),
+  let noise =
+    Re.Perl.compile_pat "(\\[|\\()full album(\\]|\\))" ~opts:[`Caseless]
+  in
+  let clean = Fun.compose (Re.replace_string noise ~by:"") String.trim in
+  let title_parts = json
+              |> Util.member "title"
+              |> Util.to_string
+              |> String.split_on_char '-' in
+  let album_artist = List.nth title_parts 0 |> clean in
+  let album_title = List.nth title_parts 1 |> clean in
+  album_title,
+  album_artist,
   Util.to_string (Util.member "description" json),
   Util.to_string (Util.member "thumbnail" json) |> Uri.of_string
 
@@ -66,12 +78,11 @@ let main url dir no_download no_extract =
     download url;
 
   say "Parsing .info.json";
-  let video_title, desc, cover_uri = parse_info_json "album.mp3.info.json" in
+  let album_title, album_artist, desc, cover_uri = parse_info_json "album.mp3.info.json" in
 
   say "Downloading cover art (video thumbnail)";
   Util.wget cover_uri "cover.jpg" |> Lwt_main.run;
 
-  let album_artist, album_title = Pitzulit.Desc.parse_vid_title video_title in
   sayf "Album details found: \"%s\" by %s\n" album_title album_artist;
 
   let album = Pitzulit.Album.{

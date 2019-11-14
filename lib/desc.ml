@@ -1,14 +1,10 @@
 open Containers
 open Option.Infix
 
-(* track patterns *)
+(* track name patterns *)
 let timestamp_pat        = Re.Perl.compile_pat "(?:\\d+:)?\\d+:\\d+"
 let list_item_mark_pat   = Re.Perl.compile_pat "\\d+\\."
 let other_noise_pat      = Re.Perl.compile_pat "-|–|-|-"
-
-(* video title patterns *)
-let album_title_noise_pat = Re.Perl.compile_pat
-    "(\\[|\\()full album(\\]|\\))" ~opts:[`Caseless]
 
 type stamp_line = {
   title: string;
@@ -82,13 +78,3 @@ let parse_tracks_from_desc (desc: string): Track.t list =
           | _ -> Track.Time.Middle (timestamp_sec, next_stamp)
       in
       Track.{title; time; track_num = track_num + 1})
-
-
-let parse_vid_title video_title =
-  let s = String.split_on_char '-' video_title in
-  List.nth s 0
-  |> Re.replace_string album_title_noise_pat ~by:""
-  |> String.trim,
-  List.nth s 1
-  |> Re.replace_string album_title_noise_pat ~by:""
-  |> String.trim
