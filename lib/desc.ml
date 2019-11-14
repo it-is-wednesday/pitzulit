@@ -50,8 +50,7 @@ let parse_line (raw_line: string) : stamp_line option =
         timestamp_sec = timestamp}
 
 
-(* given a video description, returns the tracklist in it (if any) *)
-let parse_tracks_from_desc (desc: string): Track.t list =
+let parse_tracks_from_desc desc =
   (* gather all lines in given video description to hold a track title and
      timestamp. for example:
      2:30 bruh song
