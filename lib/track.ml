@@ -22,7 +22,7 @@ let to_string track =
     | Middle (x, y) -> x, y
     | End x -> x, -1
   in
-  Printf.sprintf "%s (%d - %d)" track.title beg end_
+  Printf.sprintf "%d. %s (%d - %d)" track.track_num track.title beg end_
 
 
 let extract album_file {title; time; _} =
@@ -39,4 +39,4 @@ let extract album_file {title; time; _} =
        "ffmpeg -loglevel info -hide_banner -y %s -i '%s' '%s.mp3'"
        range
        (String.escaped album_file)
-       title) |> ignore;
+       title) |> ignore

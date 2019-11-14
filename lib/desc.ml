@@ -81,7 +81,7 @@ let parse_tracks_from_desc (desc: string): Track.t list =
           | 0 -> Track.Time.Beginning next_stamp
           | _ -> Track.Time.Middle (timestamp_sec, next_stamp)
       in
-      Track.{title; time; track_num})
+      Track.{title; time; track_num = track_num + 1})
 
 
 let parse_vid_title video_title =
