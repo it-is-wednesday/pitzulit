@@ -1,0 +1,6 @@
+(library
+ (inline_tests)
+ (name pitzulit_test)
+ (libraries pitzulit containers)
+ (preprocess
+  (pps ppx_inline_test)))

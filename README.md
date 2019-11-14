@@ -18,10 +18,3 @@ opam pin . --switch pitzulit
 make
 ```
 An executable named `pitzulit` will be created under the current directory.
-
-## Cool things to wish for
-- [X] MP3 Tags
-- [ ] Progress bar
-- [ ] Tests
-- [ ] Useful error messages
-- [X] Ensure essential binaries are available

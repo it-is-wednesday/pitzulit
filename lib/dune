@@ -1,6 +1,3 @@
 (library
- (inline_tests)
  (name pitzulit)
- (libraries containers cohttp-lwt-unix yojson re cmdliner ANSITerminal)
- (preprocess
-  (pps ppx_inline_test)))
+ (libraries containers cohttp-lwt-unix yojson re cmdliner ANSITerminal))
