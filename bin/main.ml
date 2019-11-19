@@ -55,15 +55,6 @@ let tag file (track: Pitzulit.Track.t) (album: Pitzulit.Album.t) =
 
 
 let main url dir no_download no_extract =
-  if not (IO.File.exists dir) then begin
-    sayf "Directory %s doesn't exist, creating it" dir;
-    Unix.mkdir dir 0o777;
-  end;
-
-  sayf "Working in %s"
-    (if String.equal dir "." then "current directory" else dir);
-  Sys.chdir dir;
-
   (* make sure the required executables are available via PATH *)
   say "Looking for required binaries";
   let required_bins = ["youtube-dl"; "eyeD3"; "ffmpeg"] in
@@ -79,23 +70,32 @@ let main url dir no_download no_extract =
 
   say "Parsing .info.json";
   let album_title, album_artist, desc, cover_uri = parse_info_json "album.mp3.info.json" in
+  sayf "Album details found: \"%s\" by %s\n" album_title album_artist;
+
+  let dir =
+    if String.equal dir "[named after album title]" then album_title else dir in
+
+  if not (IO.File.exists dir) then begin
+    sayf "Creating directory %s" dir;
+    Unix.mkdir dir 0o777;
+  end;
 
   say "Downloading cover art (video thumbnail)";
-  Util.wget cover_uri "cover.jpg" |> Lwt_main.run;
-
-  sayf "Album details found: \"%s\" by %s\n" album_title album_artist;
+  let cover_file = dir ^ "/cover.jpg" in
+  Util.wget cover_uri cover_file |> Lwt_main.run;
 
   let album = Pitzulit.Album.{
       title = album_title;
       artist = album_artist;
-      cover_art = IO.File.make "cover.jpg" } in
+      cover_art = IO.File.make cover_file } in
 
   desc
   |> Pitzulit.Desc.parse_tracks_from_desc
   |> List.iter (fun (track : Pitzulit.Track.t) ->
-      let track_file = track.title ^ ".mp3" in
+      let track_file = Printf.sprintf "%s/%s.mp3" dir track.title in
+      say track_file;
       if not no_extract then
-        Pitzulit.Track.extract "album.mp3" track;
+        Pitzulit.Track.extract "album.mp3" dir track;
       tag track_file track album |> ignore;)
 
 let () = Cli.run main

@@ -14,7 +14,7 @@ let url =
 
 let dir =
   let doc = "Directory in which all the fun will happen" in
-  Arg.(value & opt string "." & info ["d"; "dir"] ~docv:"PATH" ~doc)
+  Arg.(value & opt string "[named after album title]" & info ["d"; "dir"] ~docv:"PATH" ~doc)
 
 let run main_func =
   let open Cmdliner in

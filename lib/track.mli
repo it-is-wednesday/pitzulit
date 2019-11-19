@@ -11,4 +11,6 @@ type t = {
   track_num: int
 }
 
-val extract : string -> t -> unit
+(** [extract album outpath track ] extracts using ffmpeg this track's segment
+    out of the whole album's file into outpath *)
+val extract : string -> string -> t -> unit

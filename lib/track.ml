@@ -14,7 +14,7 @@ type t = {
 }
 
 
-let extract album_file {title; time; _} =
+let extract album_file dir {title; time; _} =
   let range =
     let open Time in
     match time with
@@ -25,7 +25,8 @@ let extract album_file {title; time; _} =
   let title = String.escaped title in
   Sys.command
     (Printf.sprintf
-       "ffmpeg -loglevel info -hide_banner -y %s -i '%s' '%s.mp3'"
+       "ffmpeg -loglevel info -hide_banner -y %s -i '%s' '%s/%s.mp3'"
        range
        (String.escaped album_file)
+       dir
        title) |> ignore
