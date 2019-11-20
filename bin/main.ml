@@ -28,29 +28,9 @@ let download url =
     sayf ~err:true "youtube-dl failed with error code %d\n" error_code; exit 1
 
 
-(** returns: album title, album artist, video description, thumbnail URL *)
-let parse_info_json file_name =
-  let open Yojson.Basic in
-  let json = from_file file_name in
-  let noise =
-    Re.Perl.compile_pat "(\\[|\\()full album(\\]|\\))" ~opts:[`Caseless]
-  in
-  let clean = Fun.compose (Re.replace_string noise ~by:"") String.trim in
-  let title_parts = json
-              |> Util.member "title"
-              |> Util.to_string
-              |> String.split_on_char '-' in
-  let album_artist = List.nth title_parts 0 |> clean in
-  let album_title = List.nth title_parts 1 |> clean in
-  album_title,
-  album_artist,
-  Util.to_string (Util.member "description" json),
-  Util.to_string (Util.member "thumbnail" json) |> Uri.of_string
-
-
-let tag file (track: Pitzulit.Track.t) (album: Pitzulit.Album.t) =
+let tag file (track: Pitzulit.Track.t) (album: Pitzulit.Album.t) cover_file =
   Printf.sprintf Strings.eyed3_cmd
-    file track.title album.artist album.title track.track_num album.cover_art
+    file track.title album.artist album.title track.track_num cover_file
   |> Sys.command
 
 
@@ -68,12 +48,13 @@ let main url dir no_download no_extract =
   else
     download url;
 
-  say "Parsing .info.json";
-  let album_title, album_artist, desc, cover_uri = parse_info_json "album.mp3.info.json" in
-  sayf "Album details found: \"%s\" by %s\n" album_title album_artist;
+  let album =
+    Yojson.Basic.from_file "album.mp3.info.json"
+    |> Pitzulit.Album.from_info_json
+  in
 
   let dir =
-    if String.equal dir "[named after album title]" then album_title else dir in
+    if String.equal dir "[named after album title]" then album.title else dir in
 
   if not (IO.File.exists dir) then begin
     sayf "Creating directory %s" dir;
@@ -82,20 +63,14 @@ let main url dir no_download no_extract =
 
   say "Downloading cover art (video thumbnail)";
   let cover_file = dir ^ "/cover.jpg" in
-  Util.wget cover_uri cover_file |> Lwt_main.run;
+  Util.wget album.cover_art_url cover_file |> Lwt_main.run;
 
-  let album = Pitzulit.Album.{
-      title = album_title;
-      artist = album_artist;
-      cover_art = IO.File.make cover_file } in
-
-  desc
-  |> Pitzulit.Desc.parse_tracks_from_desc
+  album.tracks
   |> List.iter (fun (track : Pitzulit.Track.t) ->
       let track_file = Printf.sprintf "%s/%s.mp3" dir track.title in
       say track_file;
       if not no_extract then
         Pitzulit.Track.extract "album.mp3" dir track;
-      tag track_file track album |> ignore;)
+      tag track_file track album cover_file |> ignore;)
 
 let () = Cli.run main
