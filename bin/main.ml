@@ -11,27 +11,7 @@ again, without --no-download.|}
 
   let bins_not_found = {|Couldn't find in PATH one of these binaries: \
 youtube-dl, eyeD3, ffmpeg|}
-
-  let youtubedl_cmd : _ f = {|youtube-dl '%s' --extract-audio --audio-format=mp3 \
---output album.mp3 --write-info-json|}
-
-  let eyed3_cmd : _ f = {|eyeD3 '%s' --title '%s' --artist '%s' --album '%s' \
---track %d --add-image %s:FRONT_COVER|}
 end
-
-
-let download url =
-  let cmd = Printf.sprintf Strings.youtubedl_cmd url in
-  match Sys.command cmd with
-  | 0 -> ()
-  | error_code ->
-    sayf ~err:true "youtube-dl failed with error code %d\n" error_code; exit 1
-
-
-let tag file (track: Pitzulit.Track.t) (album: Pitzulit.Album.t) cover_file =
-  Printf.sprintf Strings.eyed3_cmd
-    file track.title album.artist album.title track.track_num cover_file
-  |> Sys.command
 
 
 let main url dir no_download no_extract =
@@ -46,7 +26,7 @@ let main url dir no_download no_extract =
   if no_download then
     say "Skipping video download"
   else
-    download url;
+    Util.youtube_dl url;
 
   let album =
     Yojson.Basic.from_file "album.mp3.info.json"
@@ -68,9 +48,14 @@ let main url dir no_download no_extract =
   album.tracks
   |> List.iter (fun (track : Pitzulit.Track.t) ->
       let track_file = Printf.sprintf "%s/%s.mp3" dir track.title in
-      say track_file;
       if not no_extract then
         Pitzulit.Track.extract "album.mp3" dir track;
-      tag track_file track album cover_file |> ignore;)
+
+      Util.eyeD3 track_file
+        ~title:track.title
+        ~artist:album.artist
+        ~album:album.title
+        ~track_num:track.track_num
+        ~cover:cover_file |> ignore)
 
 let () = Cli.run main
