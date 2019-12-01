@@ -9,6 +9,8 @@ type t = {
 
 module type InfoParser = sig
   val parse : Yojson.Basic.t -> Track.t list
+  (** [parse info_json] parse the tracklist out of a video's info json
+      (output of youtube-dl's --write-info-json flag *)
 end
 
 module DescriptionParser : InfoParser = struct

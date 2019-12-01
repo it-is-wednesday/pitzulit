@@ -46,16 +46,26 @@ let main url dir no_download no_extract =
   Util.wget album.cover_art_url cover_file |> Lwt_main.run;
 
   album.tracks
-  |> List.iter (fun (track : Pitzulit.Track.t) ->
+  |> List.map (fun (track : Pitzulit.Track.t) ->
       let track_file = Printf.sprintf "%s/%s.mp3" dir track.title in
-      if not no_extract then
-        Pitzulit.Track.extract "album.mp3" dir track;
+      let tag_cmd =
+        Util.eyeD3 track_file
+          ~title:track.title
+          ~artist:album.artist
+          ~album:album.title
+          ~track_num:track.track_num
+          ~cover:cover_file
+      in
 
-      Util.eyeD3 track_file
-        ~title:track.title
-        ~artist:album.artist
-        ~album:album.title
-        ~track_num:track.track_num
-        ~cover:cover_file |> ignore)
+      let cmd = if not no_extract then
+          Lwt.bind
+            (Pitzulit.Track.extract "album.mp3" dir track)
+            (fun () -> tag_cmd )
+        else tag_cmd
+      in
+
+      cmd)
+  |> Lwt.join
+  |> Lwt_main.run
 
 let () = Cli.run main

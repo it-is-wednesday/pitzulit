@@ -19,12 +19,12 @@ let wget uri out_path =
   Cohttp_lwt.Body.to_string body >|= fun body ->
   IO.File.write_exn out_path body
 
-let eyeD3 file ~title ~artist ~album ~track_num ~cover =
-  Printf.sprintf
-    "eyeD3 '%s' --title '%s' --artist '%s' --album '%s' \
-     --track %d --add-image %s:FRONT_COVER"
-    file title artist album track_num cover
-  |> Sys.command
+let eyeD3 file ~title ~artist ~album ~track_num ~cover : unit Lwt.t =
+  ("eyeD3", [|"eyeD3"; file; "--title"; title; "--artist"; artist;
+             "--album"; album; "--track"; Int.to_string track_num;
+             "--add-image"; cover ^ ":FRONT_COVER"|])
+  |> Lwt_process.exec ~stdout:`Dev_null
+  |> Lwt.map (fun _ -> ())
 
 let youtube_dl url =
   let cmd =
