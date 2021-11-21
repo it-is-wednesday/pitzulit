@@ -1,5 +1,3 @@
-open Containers
-
 module Time = struct
   type t =
     | Beginning of int (* track's end timestamp in seconds *)

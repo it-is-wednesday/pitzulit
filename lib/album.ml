@@ -1,5 +1,3 @@
-open Containers
-
 type t = {
   title: string;
   artist: string;
@@ -22,7 +20,6 @@ module DescriptionParser : InfoParser = struct
     timestamp_sec: int
   }
 
-
   let parse_line (raw_line: string) : stamp_line option =
     let parse_timestamp_string time : int option =
       (* "0:02:01" -> 121 *)
@@ -32,10 +29,10 @@ module DescriptionParser : InfoParser = struct
         | hr::min::sec::[] -> hr, min, sec
         | _                -> "", "", ""
       in
-      let open Option.Infix in
-      Int.of_string hours   >>= fun hr ->
-      Int.of_string minutes >>= fun min ->
-      Int.of_string seconds >>= fun sec ->
+      let open CCOpt.Infix in
+      CCInt.of_string hours   >>= fun hr ->
+      CCInt.of_string minutes >>= fun min ->
+      CCInt.of_string seconds >>= fun sec ->
       Some (hr * 3600 + min * 60 + sec)
     in
 
@@ -56,7 +53,7 @@ module DescriptionParser : InfoParser = struct
       |> String.trim
     in
 
-    let open Option.Infix in
+    let open CCOpt.Infix in
     extract_timestamp raw_line >>= fun timestamp ->
     Some {title = extract_title raw_line;
           timestamp_sec = timestamp}
@@ -69,7 +66,7 @@ module DescriptionParser : InfoParser = struct
       timestamp. for example:
       2:30 bruh song
       3:22 second bruh song *)
-    let stamp_lines = List.filter_map parse_line (String.split ~by:"\n" desc) in
+    let stamp_lines = List.filter_map parse_line (CCString.split ~by:"\n" desc) in
 
     (* figure out track's actual time ranges out of the timestamps. we
       take into account the surrounding lines to calculate it. for example,
@@ -85,7 +82,7 @@ module DescriptionParser : InfoParser = struct
           | _ ->
             (* timestamp at next line *)
             let next_stamp =
-              (List.get_at_idx_exn (track_num + 1) stamp_lines).timestamp_sec in
+              (CCList.get_at_idx_exn (track_num + 1) stamp_lines).timestamp_sec in
             match track_num with
             | 0 -> Track.Time.Beginning next_stamp
             | _ -> Track.Time.Middle (timestamp_sec, next_stamp)
@@ -98,7 +95,7 @@ let from_info_json info =
   let noise =
     Re.Perl.compile_pat "(\\[|\\()full album(\\]|\\))" ~opts:[`Caseless]
   in
-  let clean = Fun.compose (Re.replace_string noise ~by:"") String.trim in
+  let clean = CCFun.compose (Re.replace_string noise ~by:"") String.trim in
   let title_parts = info
                     |> Util.member "title"
                     |> Util.to_string

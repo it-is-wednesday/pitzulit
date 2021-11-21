@@ -17,7 +17,6 @@ let dir =
   Arg.(value & opt string "[named after album title]" & info ["d"; "dir"] ~docv:"PATH" ~doc)
 
 let run main_func =
-  let open Cmdliner in
   let doc = "sample text" in
   Term.(exit @@ eval
           (Term.(const main_func $ url $ dir $ no_download $ no_extract),
