@@ -17,7 +17,7 @@ let dir =
   Arg.(value & opt string "[named after album title]" & info ["d"; "dir"] ~docv:"PATH" ~doc)
 
 let run main_func =
-  let doc = "sample text" in
+  let doc = "Extract tracks from an album hosted on YouTube" in
   Term.(exit @@ eval
           (Term.(const main_func $ url $ dir $ no_download $ no_extract),
            Term.info "pitzulit" ~version:"v0.1" ~doc))

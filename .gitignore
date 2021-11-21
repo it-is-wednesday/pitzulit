@@ -92,3 +92,6 @@ node_modules/
 
 # binary produces by build
 pitzulit
+
+# we generate it via dune-project
+pitzulit.opam
