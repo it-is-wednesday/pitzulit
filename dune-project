@@ -18,6 +18,7 @@
   (cmdliner :build)
   (containers :build)
   (cohttp-lwt-unix :build)
+  (lwt_ssl :build)
   (yojson :build)
   (re :build)
   (ANSITerminal :build)))

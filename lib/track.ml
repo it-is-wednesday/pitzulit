@@ -20,7 +20,6 @@ let extract album_file dir {title; time; _} =
     | Middle (beg, end_) -> Printf.sprintf "-ss %d -to %d" beg end_
     | End beg -> Printf.sprintf "-ss %d" beg
   in
-  let title = String.escaped title in
   Sys.command
     (Printf.sprintf
        "ffmpeg -loglevel info -hide_banner -y %s -i '%s' '%s/%s.mp3'"
