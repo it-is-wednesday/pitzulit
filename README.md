@@ -13,8 +13,12 @@ Running this command will create a new directory titled after the album's name. 
 
 ## Building
 ```
-opam switch create pitzulit 4.08.1
+opam switch create pitzulit 4.12.0
 opam pin . --switch pitzulit
-make
+dune build
+cp _build/default/bin/main.exe pitzulit
 ```
-An executable named `pitzulit` will be created under the current directory.
+
+## Alternatives
+- [yt-dlp](https://github.com/yt-dlp/yt-dlp/) has the `--split-chapters` flag, if the video is
+  divided into chapters
