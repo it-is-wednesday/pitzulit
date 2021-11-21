@@ -29,10 +29,10 @@ module DescriptionParser : InfoParser = struct
         | hr::min::sec::[] -> hr, min, sec
         | _                -> "", "", ""
       in
-      let open CCOpt.Infix in
-      CCInt.of_string hours   >>= fun hr ->
-      CCInt.of_string minutes >>= fun min ->
-      CCInt.of_string seconds >>= fun sec ->
+      let (let*) = Option.bind in
+      let* hr = int_of_string_opt hours in
+      let* min = int_of_string_opt minutes in
+      let* sec = int_of_string_opt seconds in
       Some (hr * 3600 + min * 60 + sec)
     in
 
@@ -53,26 +53,25 @@ module DescriptionParser : InfoParser = struct
       |> String.trim
     in
 
-    let open CCOpt.Infix in
-    extract_timestamp raw_line >>= fun timestamp ->
-    Some {title = extract_title raw_line;
-          timestamp_sec = timestamp}
+    Option.bind
+      (extract_timestamp raw_line)
+      (fun timestamp -> Some {title = extract_title raw_line; timestamp_sec = timestamp})
 
 
   let parse info_json =
     let desc =
       Yojson.Basic.Util.(info_json |> member "description" |> to_string) in
     (* gather all lines in given video description to hold a track title and
-      timestamp. for example:
-      2:30 bruh song
-      3:22 second bruh song *)
-    let stamp_lines = List.filter_map parse_line (CCString.split ~by:"\n" desc) in
+       timestamp. for example:
+       2:30 bruh song
+       3:22 second bruh song *)
+    let stamp_lines = List.filter_map parse_line (String.split_on_char '\n' desc) in
 
     (* figure out track's actual time ranges out of the timestamps. we
-      take into account the surrounding lines to calculate it. for example,
-      given the previous example, we can understand that "bruh song" starts at
-      2:30 and ends at 3:22, because the timestamp in the following line is
-      3:22. *)
+       take into account the surrounding lines to calculate it. for example,
+       given the previous example, we can understand that "bruh song" starts at
+       2:30 and ends at 3:22, because the timestamp in the following line is
+       3:22. *)
     let num_of_lines = List.length stamp_lines in
     stamp_lines |> List.mapi (fun track_num {title; timestamp_sec} ->
         let time = match track_num with
@@ -92,9 +91,7 @@ end
 
 let from_info_json info =
   let open Yojson.Basic in
-  let noise =
-    Re.Perl.compile_pat "(\\[|\\()full album(\\]|\\))" ~opts:[`Caseless]
-  in
+  let noise = Re.Perl.compile_pat "(\\[|\\()full album(\\]|\\))" ~opts:[`Caseless] in
   let clean = CCFun.compose (Re.replace_string noise ~by:"") String.trim in
   let title_parts = info
                     |> Util.member "title"
@@ -102,10 +99,7 @@ let from_info_json info =
                     |> String.split_on_char '-' in
   let album_artist = List.nth title_parts 0 |> clean in
   let album_title = List.nth title_parts 1 |> clean in
-  {
-    title = album_title;
-    artist = album_artist;
-    cover_art_url =
-      info |> Util.member "thumbnail" |> Util.to_string |> Uri.of_string;
-    tracks = DescriptionParser.parse info
-  }
+  { title = album_title
+  ; artist = album_artist
+  ; cover_art_url = info |> Util.member "thumbnail" |> Util.to_string |> Uri.of_string
+  ; tracks = DescriptionParser.parse info }
