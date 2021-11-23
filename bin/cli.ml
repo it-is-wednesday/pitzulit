@@ -17,6 +17,11 @@ let dir =
   Arg.(value & opt string "[named after album title]" & info ["d"; "dir"] ~docv:"PATH" ~doc)
 
 let run main_func =
+  (* Cmdliner deliberately has no option to use the plain help page by default, so this weird hack
+     is necessary :( See https://github.com/dbuenzli/cmdliner/pull/26 *)
+  if Array.mem "--help" Sys.argv then
+    Unix.putenv "TERM" "dumb";
+
   let doc = "Extract tracks from an album hosted on YouTube" in
   Term.(exit @@ eval
           (Term.(const main_func $ url $ dir $ no_download $ no_extract),

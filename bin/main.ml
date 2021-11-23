@@ -65,6 +65,7 @@ let main url dir no_download no_extract =
   |> List.iter (fun (track : Pitzulit.Track.t) ->
       let track_file = Printf.sprintf "%s/%s.mp3" dir track.title in
       if not no_extract then begin
+        (* Exit the whole program on ctrl-c *)
         let exit_code = Pitzulit.Track.extract "album.mp3" dir track in
         if Int.equal exit_code 255 then exit 1
       end;
