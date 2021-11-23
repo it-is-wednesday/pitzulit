@@ -64,8 +64,10 @@ let main url dir no_download no_extract =
   album.tracks
   |> List.iter (fun (track : Pitzulit.Track.t) ->
       let track_file = Printf.sprintf "%s/%s.mp3" dir track.title in
-      if not no_extract then
-        Pitzulit.Track.extract "album.mp3" dir track;
+      if not no_extract then begin
+        let exit_code = Pitzulit.Track.extract "album.mp3" dir track in
+        if Int.equal exit_code 255 then exit 1
+      end;
 
       eyeD3 track_file
         ~title:track.title

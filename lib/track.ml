@@ -20,10 +20,10 @@ let extract album_file dir {title; time; _} =
     | Middle (beg, end_) -> Printf.sprintf "-ss %d -to %d" beg end_
     | End beg -> Printf.sprintf "-ss %d" beg
   in
-  Sys.command
-    (Printf.sprintf
-       "ffmpeg -loglevel info -hide_banner -y %s -i '%s' '%s/%s.mp3'"
-       range
-       (String.escaped album_file)
-       dir
-       title) |> ignore
+  let exit_code  =
+    Printf.sprintf
+      "ffmpeg -loglevel info -hide_banner -y %s -i '%s' '%s/%s.mp3'"
+      range (String.escaped album_file) dir title
+    |> Sys.command
+  in
+  exit_code
