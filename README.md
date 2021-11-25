@@ -14,6 +14,7 @@ Running this command will create a new directory titled after the album's name. 
 ## Building
 ```
 opam switch create pitzulit 4.12.0
+dune build pitzulit.opam
 opam pin . --switch pitzulit
 dune build
 cp _build/default/bin/main.exe pitzulit
