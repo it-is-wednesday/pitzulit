@@ -15,10 +15,10 @@
  (synopsis "Extract tracks from an album hosted on YouTube")
  (description "Reclaim your music from filthy streaming services")
  (depends
-  (cmdliner :build)
-  (containers :build)
-  (cohttp-lwt-unix :build)
-  (lwt_ssl :build)
-  (yojson :build)
-  (re :build)
-  (ANSITerminal :build)))
+  cmdliner
+  containers
+  cohttp-lwt-unix
+  lwt_ssl
+  yojson
+  re
+  ANSITerminal))
