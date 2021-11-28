@@ -16,6 +16,10 @@ let dir =
   let doc = "Directory in which all the fun will happen" in
   Arg.(value & opt string "[named after album title]" & info ["d"; "dir"] ~docv:"PATH" ~doc)
 
+let verbose =
+  let doc = "Pass verbose flags to ffmpeg and eyeD3" in
+  Arg.(value & flag & info ["v"; "verbose"] ~doc)
+
 let run main_func =
   (* Cmdliner deliberately has no option to use the plain help page by default, so this weird hack
      is necessary :( See https://github.com/dbuenzli/cmdliner/pull/26 *)
@@ -24,5 +28,5 @@ let run main_func =
 
   let doc = "Extract tracks from an album hosted on YouTube" in
   Term.(exit @@ eval
-          (Term.(const main_func $ url $ dir $ no_download $ no_extract),
+          (Term.(const main_func $ url $ dir $ no_download $ no_extract $ verbose),
            Term.info "pitzulit" ~version:"v0.1" ~doc))

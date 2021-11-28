@@ -1,7 +1,8 @@
-(** Pretty print [msg] to stderr with a newline *)
+(** Print [msg] to stderr with a newline *)
 let err msg =
-  let open ANSITerminal in
-  eprintf [magenta; Bold] (msg ^^ "\n")
+  let out = Printf.eprintf (msg ^^ "\n") in
+  flush stderr;
+  out
 
 
 (** Return true [name] is a command in PATH *)
@@ -18,11 +19,15 @@ let wget uri out_path =
 
 
 (** tag [file] with eyeD3 *)
-let eyeD3 file ~title ~artist ~album ~track_num ~cover =
+let eyeD3 file ~title ~artist ~album ~track_num ~cover ~verbose =
+  (* eyed3 had a twisted idea of a quiet mode!! I wanted it to only print errors, but --quiet
+     only cuts half of the input, so I had to take matters into my own hands. and pipe
+     stdout to devnull. *)
+  let devnull_redirect = if verbose then "" else "1> /dev/null" in
   Printf.sprintf
     "eyeD3 '%s' --title '%s' --artist '%s' --album '%s' \
-     --track %d --add-image %s:FRONT_COVER"
-    file title artist album track_num cover
+     --track %d --add-image %s:FRONT_COVER %s"
+    file title artist album track_num cover devnull_redirect
   |> Sys.command
 
 
@@ -46,7 +51,7 @@ let check_binaries =
   not_found |> List.iter (fun bin -> err "%s not in path" bin; exit 1)
 
 
-let main url dir no_download no_extract =
+let main url dir no_download no_extract verbose =
   check_binaries;
   if not no_download then youtube_dl url;
 
@@ -61,12 +66,14 @@ let main url dir no_download no_extract =
   wget album.cover_art_url cover_file |> Lwt_main.run;
 
   (* extract and tag all tracks in album *)
+  print_endline "Extraction started!";
+  let tracks_amount = List.length album.tracks in
   album.tracks
   |> List.iter (fun (track : Pitzulit.Track.t) ->
       let track_file = Printf.sprintf "%s/%s.mp3" dir track.title in
       if not no_extract then begin
         (* Exit the whole program on ctrl-c *)
-        let exit_code = Pitzulit.Track.extract "album.mp3" dir track in
+        let exit_code = Pitzulit.Track.extract "album.mp3" dir track verbose in
         if Int.equal exit_code 255 then exit 1
       end;
 
@@ -75,6 +82,9 @@ let main url dir no_download no_extract =
         ~artist:album.artist
         ~album:album.title
         ~track_num:track.track_num
-        ~cover:cover_file |> ignore)
+        ~cover:cover_file
+        ~verbose |> ignore;
+
+      Printf.printf "Created %s (%d/%d)\n" track.title track.track_num tracks_amount; flush stdout)
 
 let () = Cli.run main

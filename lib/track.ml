@@ -12,7 +12,7 @@ type t = {
 }
 
 
-let extract album_file dir {title; time; _} =
+let extract album_file dir {title; time; _} verbose =
   let range =
     let open Time in
     match time with
@@ -20,10 +20,11 @@ let extract album_file dir {title; time; _} =
     | Middle (beg, end_) -> Printf.sprintf "-ss %d -to %d" beg end_
     | End beg -> Printf.sprintf "-ss %d" beg
   in
-  let exit_code  =
+  let loglevel = if verbose then "info" else "warning" in
+  let exit_code =
     Printf.sprintf
-      "ffmpeg -loglevel info -hide_banner -y %s -i '%s' '%s/%s.mp3'"
-      range (String.escaped album_file) dir title
+      "ffmpeg -hide_banner -y %s -i '%s' '%s/%s.mp3' -loglevel %s"
+      range (String.escaped album_file) dir title loglevel
     |> Sys.command
   in
   exit_code

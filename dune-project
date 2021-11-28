@@ -18,7 +18,7 @@
   cmdliner
   containers
   cohttp-lwt-unix
+  lwt
   lwt_ssl
   yojson
-  re
-  ANSITerminal))
+  re))

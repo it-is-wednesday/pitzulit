@@ -1,4 +1,4 @@
 (executable
  (public_name pitzulit)
  (name main)
- (libraries pitzulit containers cohttp-lwt-unix yojson cmdliner ANSITerminal))
+ (libraries pitzulit containers cohttp-lwt-unix yojson cmdliner))

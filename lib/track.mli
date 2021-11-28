@@ -11,6 +11,7 @@ type t = {
   track_num: int
 }
 
-(** [extract album outpath track ] extracts using ffmpeg this track's segment
-    out of the whole album's file into outpath *)
-val extract : string -> string -> t -> int
+(** [extract album outpath track verbose] extracts using ffmpeg this track's segment
+    out of the whole album's file into outpath.
+    if [verbose] is true, ffmpeg loglevel will be info (the default). otherwise: warning *)
+val extract : string -> string -> t -> bool -> int
