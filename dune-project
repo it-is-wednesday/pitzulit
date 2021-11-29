@@ -21,4 +21,8 @@
   lwt
   lwt_ssl
   yojson
-  re))
+  re
+
+  ;; web interface
+  opium
+  mustache))
