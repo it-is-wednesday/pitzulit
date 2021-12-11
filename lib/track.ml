@@ -27,4 +27,6 @@ let extract album_file dir {title; time; _} verbose =
       range (String.escaped album_file) dir title loglevel
     |> Sys.command
   in
-  exit_code
+  match exit_code with
+  | 0 -> Ok ()
+  | code -> Error (`FfmpegError code)
