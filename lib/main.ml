@@ -42,7 +42,7 @@ let youtube_dl url =
   | error_code -> Error (`YoutubeDlError error_code)
 
 
-let setup url dir no_download =
+let setup ~url ~dir ~no_download =
   let (let*) = Result.bind in
   let* _ = if not no_download then youtube_dl url else Ok () in
 
@@ -58,7 +58,7 @@ let setup url dir no_download =
   Ok (album, cover_file, dir)
 
 
-let handle_track (track: Track.t) (album: Album.t) ~dir ~cover_file ~no_extract ~verbose =
+let handle_track (track: Track.t) ~artist ~album ~dir ~cover_file ~no_extract ~verbose =
   let track_file = Printf.sprintf "%s/%s.mp3" dir track.title in
   let (let*) = Result.bind in
   let* _ = if not no_extract
@@ -67,8 +67,8 @@ let handle_track (track: Track.t) (album: Album.t) ~dir ~cover_file ~no_extract 
   in
   eyeD3 track_file
     ~title:track.title
-    ~artist:album.artist
-    ~album:album.title
+    ~artist
+    ~album
     ~track_num:track.track_num
     ~cover:cover_file
     ~verbose

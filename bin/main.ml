@@ -20,21 +20,22 @@ let check_binaries =
 
 let main url dir no_download no_extract verbose =
   let (let*) = Result.bind in
-  let* album, cover_file, dir = Pitzulit.Main.setup url dir no_download in
+  let* album, cover_file, dir = Pitzulit.Main.setup ~url ~dir ~no_download in
 
   (* extract and tag all tracks in album *)
   print_endline "Extraction started!";
   let tracks_amount = List.length album.tracks in
   album.tracks
   |> List.iter (fun t ->
-      (match Pitzulit.Main.handle_track t album ~dir ~cover_file ~no_extract ~verbose with
-       | Ok () -> ()
-       | Error error ->
-         (match error with
-          | `Eyed3Error code -> Printf.eprintf "eyeD3 failed with error code %d\n" code
-          | `FfmpegError code -> Printf.eprintf "ffmpeg failed with error code %d\n" code);
-         flush stderr;
-         exit 1);
+      (match Pitzulit.Main.handle_track t
+               ~artist:album.artist ~album:album.title ~dir ~cover_file ~no_extract ~verbose with
+      | Ok () -> ()
+      | Error error ->
+        (match error with
+         | `Eyed3Error code -> Printf.eprintf "eyeD3 failed with error code %d\n" code
+         | `FfmpegError code -> Printf.eprintf "ffmpeg failed with error code %d\n" code);
+        flush stderr;
+        exit 1);
       Printf.printf "Created %s (%d/%d)\n" t.title t.track_num tracks_amount; flush stdout);
 
   Ok ()
