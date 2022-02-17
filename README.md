@@ -21,5 +21,7 @@ cp _build/default/bin/main.exe pitzulit
 ```
 
 ## Alternatives
+- [album-splitter](https://github.com/crisbal/album-splitter) Does everything
+  Pitzulit does, and more. It's better actually
 - [yt-dlp](https://github.com/yt-dlp/yt-dlp/) has the `--split-chapters` flag, if the video is
   divided into chapters
